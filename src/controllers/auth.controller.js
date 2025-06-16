@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/user.model');
+require('dotenv').config();
 
 const signup = async (req, res) => {
     try {
@@ -22,7 +23,7 @@ const signup = async (req, res) => {
         await user.save();
         const token = jwt.sign(
             { userId: user._id, email: user.email },
-            process.env.JWT_SECRET || 'your-secret-key',
+            process.env.JWT_SECRET,
             { expiresIn: '24h' }
         );
 
@@ -67,7 +68,7 @@ const signin = async (req, res) => {
 
         const token = jwt.sign(
             { userId: user._id, email: user.email },
-            process.env.JWT_SECRET || 'your-secret-key',
+            process.env.JWT_SECRET,
             { expiresIn: '24h' }
         );
 
