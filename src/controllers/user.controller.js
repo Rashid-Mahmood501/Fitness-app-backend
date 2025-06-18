@@ -15,46 +15,88 @@ const getProfile = async (req, res) => {
 };
 
 const updateProfile = async (req, res) => {
-    try {
-        const {
-            age,
-            gender,
-            weight,
-            height,
-            activityLevel,
-            goal,
-            workoutDays,
-            profilePicture,
-            profileComplete
-        } = req.body;
+  try {
+    const {
+      age,
+      gender,
+      weight,
+      height,
+      activityLevel,
+      goal,
+      workoutDays,
+      profilePicture,
+      profileComplete,
+    } = req.body;
 
-        const isProfileComplete = typeof profileComplete === 'boolean'
-            ? profileComplete
-            : !!(age && gender && weight && height && activityLevel && goal && workoutDays);
+    const isProfileComplete =
+      typeof profileComplete === "boolean"
+        ? profileComplete
+        : !!(
+            age &&
+            gender &&
+            weight &&
+            height &&
+            activityLevel &&
+            goal &&
+            workoutDays
+          );
 
-        const updatedUser = await User.findByIdAndUpdate(
-            req.userId,
-            {
-                age,
-                gender,
-                weight,
-                height,
-                activityLevel,
-                goal,
-                workoutDays,
-                profilePicture,
-                profileComplete: isProfileComplete
-            },
-            { new: true }
-        ).select('-password');
+    const updatedUser = await User.findByIdAndUpdate(
+      req.userId,
+      {
+        age,
+        gender,
+        weight,
+        height,
+        currentWeight: weight,
+        activityLevel,
+        goal,
+        workoutDays,
+        profilePicture,
+        profileComplete: isProfileComplete,
+      },
+      { new: true }
+    ).select("-password");
 
-        if (!updatedUser) {
-            return res.status(404).json({ success: false, message: 'User not found' });
-        }
-        res.json({ message: 'Profile updated successfully', profileComplete: isProfileComplete });
-    } catch (error) {
-        res.status(500).json({ success: false, message: 'Server error' });
+    if (!updatedUser) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
     }
+    res.json({
+      message: "Profile updated successfully",
+      profileComplete: isProfileComplete,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Server error" });
+  }
 };
 
-module.exports = { getProfile, updateProfile };
+const updateCurrentWeight = async (req, res) => {
+  try {
+    const { currentWeight } = req.body;
+    if (typeof currentWeight !== "number" || currentWeight <= 0) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid weight value" });
+    }
+    const updatedUser = await User.findByIdAndUpdate(
+      req.userId,
+      { currentWeight },
+      { new: true }
+    ).select("-password");
+    if (!updatedUser) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    }
+    res.json({
+      message: "Current weight updated successfully",
+      data: updatedUser.currentWeight,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+module.exports = { getProfile, updateProfile, updateCurrentWeight };

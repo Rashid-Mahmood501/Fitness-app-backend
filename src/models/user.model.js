@@ -31,6 +31,7 @@ const userSchema = new mongoose.Schema({
   age: { type: Number },
   gender: { type: String, enum: ["male", "female", "other"] },
   weight: { type: Number },
+  currentWeight: { type: Number },
   height: { type: Number },
   activityLevel: {
     type: String,
@@ -46,6 +47,7 @@ const userSchema = new mongoose.Schema({
   workoutDays: { type: Number },
   profilePicture: { type: String },
   profileComplete: { type: Boolean, default: false },
+  mealGenerated: { type: Boolean, default: false },
 });
 
 userSchema.pre("save", async function (next) {
