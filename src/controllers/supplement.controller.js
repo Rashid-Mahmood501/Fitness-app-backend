@@ -94,35 +94,4 @@ const getSupplements = async (req, res) => {
   }
 };
 
-const createSupplement = async (req, res) => {
-  try {
-    const { name, description } = req.body;
-    
-    if (!name || !description) {
-      return res.status(400).json({
-        success: false,
-        error: "Name and description are required",
-      });
-    }
-
-    const supplement = new Supplement({
-      name,
-      description,
-    });
-
-    const savedSupplement = await supplement.save();
-    
-    res.status(201).json({
-      success: true,
-      data: savedSupplement,
-    });
-  } catch (err) {
-    res.status(500).json({
-      success: false,
-      error: "Something went wrong",
-      details: err.message,
-    });
-  }
-};
-
-module.exports = { getSupplements, createSupplement }; 
+module.exports = { getSupplements }; 
