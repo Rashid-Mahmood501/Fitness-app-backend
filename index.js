@@ -5,6 +5,7 @@ const authRoutes = require("./src/routes/auth.routes");
 const userRoutes = require("./src/routes/user.routes");
 const mealRoutes = require("./src/routes/meal.routes");
 const workoutRoutes = require("./src/routes/workout.routes");
+const supplementRoutes = require("./src/routes/supplement.routes");
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -14,6 +15,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/meal", mealRoutes);
 app.use("/api/workout", workoutRoutes);
+app.use("/api/supplement", supplementRoutes);
 
 app.get("/", (req, res) => {
   res.send("Welcome to Fitness App!");
