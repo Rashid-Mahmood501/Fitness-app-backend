@@ -6,11 +6,21 @@ const userRoutes = require("./src/routes/user.routes");
 const mealRoutes = require("./src/routes/meal.routes");
 const workoutRoutes = require("./src/routes/workout.routes");
 const supplementRoutes = require("./src/routes/supplement.routes");
+const adminMealRoutes = require("./src/routes/adminMeal.routes");
+const adminSupplementRoutes = require("./src/routes/adminSupplement.routes");
+const adminworkoutRoutes = require("./src/routes/adminWorkout.routes");
+const cors = require("cors");
 
 const app = express();
 const port = process.env.PORT || 3000;
 
+app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+// Importing routes
+app.use("/admin/meal", adminMealRoutes);
+app.use("/admin/supplement", adminSupplementRoutes);
+app.use("/admin/workout", adminworkoutRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/meal", mealRoutes);

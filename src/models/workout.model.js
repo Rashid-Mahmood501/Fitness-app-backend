@@ -8,6 +8,7 @@ const workoutSchema = new mongoose.Schema({
   equipments: [{ type: String, required: true }],
   comments: { type: String },
   suggestion: { type: String },
+  video: { type: String },
 });
 
 module.exports = mongoose.model("Workout", workoutSchema);
