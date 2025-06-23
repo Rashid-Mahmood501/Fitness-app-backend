@@ -81,9 +81,12 @@ const supplements = [
 
 const getSupplements = async (req, res) => {
   try {
+    const dbSupplements = await Supplement.find();
+    const allSupplements = [...supplements, ...dbSupplements];
+    
     res.json({
       success: true,
-      data: supplements,
+      data: allSupplements,
     });
   } catch (err) {
     res.status(500).json({
