@@ -102,7 +102,7 @@ const createSupplement = async (req, res) => {
 const getAllSupplements = async (req, res) => {
   try {
     const dbSupplements = await Supplement.find();
-    const allSupplements = [...supplements, ...dbSupplements];
+    const allSupplements = [ ...dbSupplements, ...supplements,];
     res.json({
       success: true,
       data: allSupplements,
