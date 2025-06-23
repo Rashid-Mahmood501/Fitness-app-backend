@@ -21,7 +21,7 @@ const corsOptions = {
     if (origin.startsWith("http://localhost:")) {
       return callback(null, true);
     }
-    if (origin === "https://fitness-app-frontend.onrender.com") {
+    if (origin === "https://admin-fitness-app.onrender.com") {
       return callback(null, true);
     }
 
