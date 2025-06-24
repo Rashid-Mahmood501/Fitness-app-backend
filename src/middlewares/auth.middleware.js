@@ -4,7 +4,7 @@ require('dotenv').config();
 const authMiddleware = (req, res, next) => {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return res.status(401).json({ success: false, message: 'No token provided' });
+        return res.status(401).json({ success: false, message: 'No token provided', logout : true });
     }
     const token = authHeader.split(' ')[1];
     try {
@@ -12,7 +12,7 @@ const authMiddleware = (req, res, next) => {
         req.userId = decoded.userId;
         next();
     } catch (err) {
-        return res.status(401).json({ success: false, message: 'Invalid token' });
+        return res.status(401).json({ success: false, message: 'Invalid token' , logout: true });
     }
 };
 

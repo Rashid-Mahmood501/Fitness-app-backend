@@ -35,6 +35,17 @@ const createWorkout = async (req, res) => {
   }
 };
 
+const allWorkouts = async (req, res) => {
+  try {
+    const workouts = await Workout.find();
+    res.json({ success: true, workouts });
+  } catch (error) {
+    console.error("Error retrieving workouts:", error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
 module.exports = {
   createWorkout,
+  allWorkouts,
 };
