@@ -31,7 +31,7 @@ const saveMeal = async (req, res) => {
 
 const getAllMeals = async (req, res) => {
   try {
-    const meals = await MealStore.find();
+    const meals = await MealStore.find().sort({ createdAt: -1 });
     res.status(200).json({
       message: "Meals retrieved successfully",
       data: meals,

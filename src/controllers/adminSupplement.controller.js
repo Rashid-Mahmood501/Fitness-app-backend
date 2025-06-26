@@ -101,7 +101,7 @@ const createSupplement = async (req, res) => {
 
 const getAllSupplements = async (req, res) => {
   try {
-    const dbSupplements = await Supplement.find();
+    const dbSupplements = await Supplement.find().sort({ createdAt: -1 });
     res.json({
       success: true,
       data: dbSupplements,

@@ -37,7 +37,7 @@ const createWorkout = async (req, res) => {
 
 const allWorkouts = async (req, res) => {
   try {
-    const workouts = await Workout.find();
+    const workouts = await Workout.find().sort({ createdAt: -1 });
     res.json({ success: true, workouts });
   } catch (error) {
     console.error("Error retrieving workouts:", error);
