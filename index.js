@@ -21,6 +21,9 @@ const corsOptions = {
     if (origin.startsWith("http://localhost:")) {
       return callback(null, true);
     }
+    if (origin.startsWith("https://deepskyblue-zebra-292697.hostingersite.com")) {
+      return callback(null, true);
+    }
     if (origin === "https://admin-fitness-app.onrender.com") {
       return callback(null, true);
     }
