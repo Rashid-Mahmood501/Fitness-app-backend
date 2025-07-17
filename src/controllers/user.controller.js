@@ -26,6 +26,7 @@ const updateProfile = async (req, res) => {
       workoutDays,
       profilePicture,
       profileComplete,
+      mealType,
     } = req.body;
 
     const isProfileComplete =
@@ -38,9 +39,11 @@ const updateProfile = async (req, res) => {
             height &&
             activityLevel &&
             goal &&
-            workoutDays
+            workoutDays &&
+            mealType
           );
 
+    const profileUrl = req.file?.path;
     const updatedUser = await User.findByIdAndUpdate(
       req.userId,
       {
@@ -52,7 +55,8 @@ const updateProfile = async (req, res) => {
         activityLevel,
         goal,
         workoutDays,
-        profilePicture,
+        profilePicture: profileUrl,
+        mealType,
         profileComplete: isProfileComplete,
       },
       { new: true }

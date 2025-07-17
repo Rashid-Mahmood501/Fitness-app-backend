@@ -2,7 +2,7 @@ const MealStore = require("../models/mealStore.model");
 
 const saveMeal = async (req, res) => {
   try {
-    const { name, mealType, calories, protein, fat, carbs } = req.body;
+    const { name, mealType, calories, protein, fat, carbs, recipe } = req.body;
     const imageUrl = req.file?.path;
     if (!imageUrl) {
       return res.status(400).json({ error: "Image upload failed" });
@@ -15,6 +15,7 @@ const saveMeal = async (req, res) => {
       fat,
       carbs,
       image: imageUrl,
+      recipe,
     });
     res.status(200).json({
       message: "Meal saved successfully",
