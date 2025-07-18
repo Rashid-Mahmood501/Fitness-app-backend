@@ -2,6 +2,7 @@ const MealStore = require("../models/mealStore.model");
 
 const saveMeal = async (req, res) => {
   try {
+    console.log("Received form data:", JSON.stringify(req.body, null, 2));
     const { name, mealType, calories, protein, fat, carbs, recipe } = req.body;
     const imageUrl = req.file?.path;
     if (!imageUrl) {

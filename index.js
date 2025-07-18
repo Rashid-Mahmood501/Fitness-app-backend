@@ -9,6 +9,7 @@ const supplementRoutes = require("./src/routes/supplement.routes");
 const adminMealRoutes = require("./src/routes/adminMeal.routes");
 const adminSupplementRoutes = require("./src/routes/adminSupplement.routes");
 const adminworkoutRoutes = require("./src/routes/adminWorkout.routes");
+const bookingRoutes = require("./src/routes/booking.routes");
 const cors = require("cors");
 
 const app = express();
@@ -82,6 +83,7 @@ app.use("/api/user", userRoutes);
 app.use("/api/meal", mealRoutes);
 app.use("/api/workout", workoutRoutes);
 app.use("/api/supplement", supplementRoutes);
+app.use("/api/booking", bookingRoutes);
 
 app.get("/", (req, res) => {
   res.send("Welcome to Fitness App!");
