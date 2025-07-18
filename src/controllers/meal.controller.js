@@ -1,6 +1,6 @@
 const Meal = require("../models/meal.model");
 const User = require("../models/user.model");
-const { generateMeals } = require("../utils/mealGenerator");
+const {  generateMealsFromDB } = require("../utils/mealGenerator");
 
 function calculateUserMacros(user) {
   const gender = user.gender?.toLowerCase();
@@ -52,14 +52,13 @@ function calculateUserMacros(user) {
 
 const suggestAllMeals = async (req, res) => {
   try {
-    console.log("request received");
     const userId = req.userId;
     console.log(userId);
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ error: "User not found" });
 
     const macros = calculateUserMacros(user);
-    const suggestedMeals = await generateMeals(macros);
+    const suggestedMeals = await generateMealsFromDB(macros);
 
     res.json({
       success: true,
