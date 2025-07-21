@@ -35,6 +35,39 @@ const createWorkout = async (req, res) => {
   }
 };
 
+const updateWorkout = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, muscleGroup, setType, reps, comments, suggestion } = req.body;
+    const videoUrl = req.file?.path;
+
+    // Fetch the existing workout first
+    const existingWorkout = await Workout.findById(id);
+    if (!existingWorkout) {
+      return res.status(404).json({ error: "Workout not found" });
+    }
+
+    // Update with new or existing video
+    const updatedWorkout = await Workout.findByIdAndUpdate(
+      id,
+      {
+        name,
+        muscleGroup,
+        setType,
+        reps,
+        comments,
+        suggestion,
+        video: videoUrl || existingWorkout.video,
+      },
+      { new: true }
+    );
+
+    res.json({ success: true, workout: updatedWorkout });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 const allWorkouts = async (req, res) => {
   try {
     const workouts = await Workout.find().sort({ createdAt: -1 });
@@ -48,4 +81,5 @@ const allWorkouts = async (req, res) => {
 module.exports = {
   createWorkout,
   allWorkouts,
+  updateWorkout,
 };

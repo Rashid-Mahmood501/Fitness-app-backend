@@ -1,115 +1,53 @@
-const MealStore = require("../models/mealStore.model");
+const MealPlan = require("../models/adminMeal.model");
 
 const saveMeal = async (req, res) => {
   try {
-    console.log("Received form data:", JSON.stringify(req.body, null, 2));
-    const { name, mealType, calories, protein, fat, carbs, recipe } = req.body;
+    const { planTitle, days } = req.body;
+
+    const mealPlan = new MealPlan({
+      planTitle,
+      days,
+    });
+
+    await mealPlan.save();
+
+    res.status(201).json({
+      message: "Meal plan saved successfully",
+      data: mealPlan,
+    });
+  } catch (error) {
+    console.error("Error saving meal plan:", error);
+    res.status(500).json({
+      message: "Server error while saving meal plan",
+      error: error.message,
+    });
+  }
+};
+
+const uploadImage = async (req, res) => {
+  try {
     const imageUrl = req.file?.path;
-    if (!imageUrl) {
+    console.log(imageUrl);
+    if (!imageUrl)
       return res.status(400).json({ error: "Image upload failed" });
-    }
-    const meal = await MealStore.create({
-      name,
-      type: mealType,
-      calories,
-      protein,
-      fat,
-      carbs,
-      image: imageUrl,
-      recipe,
-    });
-    res.status(200).json({
-      message: "Meal saved successfully",
-      data: meal,
-    });
-  } catch (err) {
-    console.error("Error saving meals:", err);
-    res.status(500).json({
-      error: "Something went wrong",
-      details: err.message,
-    });
-  }
-};
-
-const getAllMeals = async (req, res) => {
-  try {
-    const meals = await MealStore.find().sort({ createdAt: -1 });
-    res.status(200).json({
-      message: "Meals retrieved successfully",
-      data: meals,
-    });
-  } catch (err) {
-    console.error("Error retrieving meals:", err);
-    res.status(500).json({
-      error: "Something went wrong",
-      details: err.message,
-    });
-  }
-};
-
-const updateMeal = async (req, res) => {
-  try {
-    const id = req.params.id;
-    const { name, mealType, calories, protein, fat, carbs } = req.body;
-    const imageUrl = req.file?.path;
-
-    const updateData = {
-      name,
-      type: mealType,
-      calories,
-      protein,
-      fat,
-      carbs,
-    };
-
-    if (imageUrl) {
-      updateData.image = imageUrl;
-    }
-
-    const updatedMeal = await MealStore.findByIdAndUpdate(id, updateData, {
-      new: true,
-    });
-
-    if (!updatedMeal) {
-      return res.status(404).json({ error: "Meal not found" });
-    }
 
     res.status(200).json({
-      message: "Meal updated successfully",
-      data: updatedMeal,
+      message: "Image uploaded successfully",
+      imageUrl,
     });
-  } catch (err) {
-    console.error("Error retrieving meals:", err);
+  } catch (error) {
+    console.error("Error saving meal plan:", error);
     res.status(500).json({
-      error: "Something went wrong",
-      details: err.message,
-    });
-  }
-};
-
-const deleteMeal = async (req, res) => {
-  try {
-    const id = req.params.id;
-    const deletedMeal = await MealStore.findByIdAndDelete(id);
-    if (!deletedMeal) {
-      return res.status(404).json({ error: "Meal not found" });
-    }
-    res.status(200).json({
-      message: "Meal deleted successfully",
-      data: deletedMeal,
-    });
-  } catch (err) {
-    console.error("Error retrieving meals:", err);
-    res.status(500).json({
-      error: "Something went wrong",
-      details: err.message,
+      message: "Server error while saving meal plan",
+      error: error.message,
     });
   }
 };
 
 module.exports = {
   saveMeal,
-  getAllMeals,
-  updateMeal,
-  deleteMeal,
+  uploadImage,
+  // getAllMeals,
+  // updateMeal,
+  // deleteMeal,
 };

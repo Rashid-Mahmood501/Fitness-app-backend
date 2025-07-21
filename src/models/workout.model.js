@@ -6,7 +6,7 @@ const workoutSchema = new mongoose.Schema(
     muscleGroup: { type: String, required: true },
     setType: { type: String, required: true },
     reps: { type: String, required: true },
-    equipments: [{ type: String, required: true }],
+    equipments: [{ type: String }],
     comments: { type: String },
     suggestion: { type: String },
     video: { type: String },
