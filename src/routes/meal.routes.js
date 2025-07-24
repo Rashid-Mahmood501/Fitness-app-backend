@@ -9,6 +9,6 @@ const authMiddleware = require("../middlewares/auth.middleware");
 
 router.get("/suggest", authMiddleware,  suggestAllMeals);
 router.post("/save", authMiddleware, saveUserMeals);
-router.get("/user-meals",  getUserMeals);
+router.get("/user-meals", authMiddleware, getUserMeals);
 
 module.exports = router;

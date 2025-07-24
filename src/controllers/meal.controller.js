@@ -120,8 +120,7 @@ const saveUserMeals = async (req, res) => {
 
 const getUserMeals = async (req, res) => {
   try {
-    // const userId = req.userId;
-    const userId = "687a74399ec123e58378481f";
+    const userId = req.userId;
 
     const user = await User.findById(userId);
     if (!user) {
@@ -145,9 +144,12 @@ const getUserMeals = async (req, res) => {
       $expr: { $eq: [{ $size: "$days" }, workoutDays] },
     }).lean();
 
+    // Transform the data to group by meal types
+    const transformedData = transformMealPlans(plans);
+
     res.json({
       success: true,
-      data: plans,
+      data: transformedData,
     });
   } catch (err) {
     console.error("Error in getUserWorkout:", err);
@@ -157,6 +159,53 @@ const getUserMeals = async (req, res) => {
       details: err.message,
     });
   }
+};
+
+const transformMealPlans = (plans) => {
+  const mealTypeMap = {
+    breakfast: null,
+    lunch: null,
+    dinner: null,
+    snack: null,
+  };
+
+  // Process each plan to find the first occurrence of each meal type
+  for (const plan of plans) {
+    // Check if this plan contains any specific meal type
+    const mealTypeInPlan = getMealTypeFromPlan(plan);
+
+    if (mealTypeInPlan && !mealTypeMap[mealTypeInPlan]) {
+      // Clone the plan and add the meal type as key
+      const transformedPlan = {
+        _id: plan._id,
+        planTitle: plan.planTitle,
+        createdAt: plan.createdAt,
+        updatedAt: plan.updatedAt,
+        __v: plan.__v,
+      };
+
+      // Add the days array under the meal type key
+      transformedPlan[mealTypeInPlan] = plan.days;
+
+      mealTypeMap[mealTypeInPlan] = transformedPlan;
+    }
+  }
+
+  // Convert to array, filtering out null values
+  return Object.values(mealTypeMap).filter((plan) => plan !== null);
+};
+
+const getMealTypeFromPlan = (plan) => {
+  // Check the first day's first meal option to determine the meal type of this plan
+  if (
+    plan.days &&
+    plan.days.length > 0 &&
+    plan.days[0].mealOptions &&
+    plan.days[0].mealOptions.length > 0
+  ) {
+    return plan.days[0].mealOptions[0].mealType;
+  }
+  return null;
 };
 
 module.exports = {
