@@ -1,6 +1,7 @@
 const Meal = require("../models/meal.model");
 const User = require("../models/user.model");
-const {  generateMealsFromDB } = require("../utils/mealGenerator");
+const { generateMealsFromDB } = require("../utils/mealGenerator");
+const MealPlan = require("../models/adminMeal.model");
 
 function calculateUserMacros(user) {
   const gender = user.gender?.toLowerCase();
@@ -119,13 +120,37 @@ const saveUserMeals = async (req, res) => {
 
 const getUserMeals = async (req, res) => {
   try {
-    const userId = req.userId;
-    const meals = await Meal.find({ userId });
+    // const userId = req.userId;
+    const userId = "687a74399ec123e58378481f";
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const workoutDays = parseInt(user.workoutDays);
+    let userGoal;
+    const goal = user.goal;
+
+    if (goal === "build muscle mass") {
+      userGoal = "muscle-mass";
+    } else if (goal === "lose weight") {
+      userGoal = "weight-loss";
+    } else if (goal === "bulk up") {
+      userGoal = "bulk-up";
+    }
+
+    const plans = await MealPlan.find({
+      planTitle: userGoal,
+      $expr: { $eq: [{ $size: "$days" }, workoutDays] },
+    }).lean();
+
     res.json({
       success: true,
-      data: meals,
+      data: plans,
     });
   } catch (err) {
+    console.error("Error in getUserWorkout:", err);
     res.status(500).json({
       success: false,
       error: "Something went wrong",

@@ -2,33 +2,57 @@ const Workout = require("../models/workout.model");
 
 const createWorkout = async (req, res) => {
   try {
-    console.dir(req.file, { depth: null });
-    console.dir(req.body, { depth: null });
+    const {
+      workoutName,
+      setType,
+      video,
+      muscleGroup,
+      reps,
+      additionalComments,
+      workoutSuggestion,
+      alternativeExercises = [],
+    } = req.body;
 
-    const { name, muscleGroup, setType, reps, comments, suggestion } = req.body;
-
-    const equipments = Array.isArray(req.body.equipments)
-      ? req.body.equipments
-      : [req.body.equipments];
-
-    const videoUrl = req.file?.path;
-    if (!videoUrl)
-      return res.status(400).json({ error: "Video upload failed" });
-
-    const workout = await Workout.create({
-      name,
+    const mainWorkout = new Workout({
+      name: workoutName,
       muscleGroup,
       setType,
       reps,
-      equipments,
-      comments,
-      suggestion,
-      video: videoUrl,
+      comments: additionalComments,
+      suggestion: workoutSuggestion,
+      video,
     });
+    await mainWorkout.save();
 
-    console.log("Workout saved:", workout);
+    let alternatives = [];
+    if (
+      Array.isArray(alternativeExercises) &&
+      alternativeExercises.length > 0
+    ) {
+      alternatives = await Promise.all(
+        alternativeExercises.map(async (alt) => {
+          const ex = alt.exercise || {};
+          const altWorkout = new Workout({
+            name: ex.workoutName,
+            muscleGroup: ex.muscleGroup,
+            setType: ex.setType,
+            reps: ex.reps,
+            comments: ex.additionalComments,
+            suggestion: ex.workoutSuggestion,
+            video: ex.video,
+            parentId: mainWorkout._id,
+          });
+          await altWorkout.save();
+          return altWorkout;
+        })
+      );
+    }
 
-    res.json({ success: true, workout });
+    res.status(201).json({
+      success: true,
+      workout: mainWorkout,
+      alternatives,
+    });
   } catch (error) {
     console.error("Error saving workout:", error);
     res.status(500).json({ error: error.message });
@@ -68,10 +92,34 @@ const updateWorkout = async (req, res) => {
   }
 };
 
+const uploadVideo = async (req, res) => {
+  try {
+    const videoUrl = req.file?.path;
+    if (!videoUrl)
+      return res.status(400).json({ error: "Video upload failed" });
+    res.json({ success: true, videoUrl });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 const allWorkouts = async (req, res) => {
   try {
-    const workouts = await Workout.find().sort({ createdAt: -1 });
-    res.json({ success: true, workouts });
+    const mainWorkouts = await Workout.find({ parentId: null }).sort({
+      createdAt: -1,
+    });
+
+    const workoutsWithAlternatives = await Promise.all(
+      mainWorkouts.map(async (workout) => {
+        const alternatives = await Workout.find({ parentId: workout._id });
+        return {
+          ...workout.toObject(),
+          alternatives,
+        };
+      })
+    );
+
+    res.json({ success: true, workouts: workoutsWithAlternatives });
   } catch (error) {
     console.error("Error retrieving workouts:", error);
     res.status(500).json({ error: error.message });
@@ -82,4 +130,5 @@ module.exports = {
   createWorkout,
   allWorkouts,
   updateWorkout,
+  uploadVideo,
 };

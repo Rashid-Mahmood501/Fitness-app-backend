@@ -4,11 +4,13 @@ const {
   createWorkout,
   allWorkouts,
   updateWorkout,
+  uploadVideo,
 } = require("../controllers/adminWorkout.controller");
 
 const router = express.Router();
 
-router.post("/save", videoUpload.single("video"), createWorkout);
+router.post("/save",  createWorkout);
 router.put("/update/:id", videoUpload.single("video"), updateWorkout);
+router.post("/upload-video", videoUpload.single("video"), uploadVideo);
 router.get("/all", allWorkouts);
 module.exports = router;
