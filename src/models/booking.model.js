@@ -7,12 +7,6 @@ const bookingSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
-    userEmail: {
-      type: String,
-      required: true,
-      trim: true,
-      lowercase: true,
-    },
     date: { type: Date, required: true },
     time: { type: String, required: true },
     location: { type: String, required: true },
