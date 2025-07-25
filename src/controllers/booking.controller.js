@@ -1,10 +1,25 @@
 const bookingModel = require("../models/booking.model");
+const User = require("../models/user.model");
 
 const saveBooking = async (req, res) => {
   try {
     const { date, time, location } = req.body;
     const userId = req.userId;
-    const booking = await bookingModel.create({ userId, date, time, location });
+    
+    // Fetch user to get their email
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    
+    const booking = await bookingModel.create({ 
+      userId, 
+      userEmail: user.email,
+      date, 
+      time, 
+      location 
+    });
+    
     res
       .status(200)
       .json({ message: "Booking saved successfully", data: booking });
@@ -16,7 +31,7 @@ const saveBooking = async (req, res) => {
 const getBooking = async (req, res) => {
   try {
     const userId = req.userId;
-    const booking = await bookingModel.find({ userId });
+    const booking = await bookingModel.find({ userId }).populate('userId', 'fullname email');
     res
       .status(200)
       .json({ message: "Booking fetched successfully", data: booking });
