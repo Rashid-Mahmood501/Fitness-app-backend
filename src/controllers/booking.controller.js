@@ -25,4 +25,27 @@ const getBooking = async (req, res) => {
   }
 };
 
-module.exports = { saveBooking, getBooking };
+const deleteBooking = async (req, res) => {
+  try {
+    const { bookingId } = req.params;
+    const userId = req.userId;
+
+    const booking = await bookingModel.findOne({ _id: bookingId, userId });
+
+    if (!booking) {
+      return res.status(404).json({ 
+        message: "Booking not found or you don't have permission to delete this booking" 
+      });
+    }
+
+    await bookingModel.findByIdAndDelete(bookingId);
+
+    res.status(200).json({ 
+      message: "Booking deleted successfully" 
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = { saveBooking, getBooking, deleteBooking };
