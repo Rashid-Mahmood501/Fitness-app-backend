@@ -103,4 +103,49 @@ const updateCurrentWeight = async (req, res) => {
   }
 };
 
-module.exports = { getProfile, updateProfile, updateCurrentWeight };
+const updateFullName = async (req, res) => {
+  try {
+    const { fullname } = req.body;
+    
+    // Validate fullname
+    if (!fullname || typeof fullname !== "string" || fullname.trim().length === 0) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Full name is required and cannot be empty" });
+    }
+
+    const trimmedFullname = fullname.trim();
+    
+    // Check if fullname is at least 2 characters long
+    if (trimmedFullname.length < 2) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Full name must be at least 2 characters long" });
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      req.userId,
+      { fullname: trimmedFullname },
+      { new: true }
+    ).select("-password");
+
+    if (!updatedUser) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    }
+
+    res.json({
+      success: true,
+      message: "Full name updated successfully",
+      data: {
+        fullname: updatedUser.fullname
+      }
+    });
+  } catch (error) {
+    console.error("Error updating full name:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+module.exports = { getProfile, updateProfile, updateCurrentWeight, updateFullName };
