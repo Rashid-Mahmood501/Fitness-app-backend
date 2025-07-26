@@ -92,7 +92,7 @@ app.use("/api/supplement", supplementRoutes);
 app.use("/api/booking", bookingRoutes);
 
 app.get("/", (req, res) => {
-  res.send("Welcome to Fitness App!");
+  res.send("Welcome to Fitness App!!!!!");
 });
 
 connectDB()
