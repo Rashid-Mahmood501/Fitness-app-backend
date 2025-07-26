@@ -46,7 +46,7 @@ const userSchema = new mongoose.Schema({
   },
   goal: { type: String, enum: ["build muscle mass", "lose weight", "bulk up"] },
   workoutDays: { type: String },
-  profilePicture: { type: String },
+  profilePicture: { type: String , default: ""},
   profileComplete: { type: Boolean, default: false },
   mealGenerated: { type: Boolean, default: false },
 });

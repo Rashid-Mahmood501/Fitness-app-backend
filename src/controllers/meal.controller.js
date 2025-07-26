@@ -141,10 +141,8 @@ const getUserMeals = async (req, res) => {
 
     const plans = await MealPlan.find({
       planTitle: userGoal,
-      $expr: { $eq: [{ $size: "$days" }, workoutDays] },
     }).lean();
 
-    // Transform the data to group by meal types
     const transformedData = transformMealPlans(plans);
 
     res.json({
