@@ -110,24 +110,20 @@ const updateFullName = async (req, res) => {
       typeof fullname !== "string" ||
       fullname.trim().length === 0
     ) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "Full name is required and cannot be empty",
-        });
+      return res.status(400).json({
+        success: false,
+        message: "Full name is required and cannot be empty",
+      });
     }
 
     const trimmedFullname = fullname.trim();
 
     // Check if fullname is at least 2 characters long
     if (trimmedFullname.length < 2) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "Full name must be at least 2 characters long",
-        });
+      return res.status(400).json({
+        success: false,
+        message: "Full name must be at least 2 characters long",
+      });
     }
 
     const updatedUser = await User.findByIdAndUpdate(
@@ -158,24 +154,41 @@ const updateFullName = async (req, res) => {
 const uploadProfileImage = async (req, res) => {
   try {
     const profileImage = req.file?.path;
+    console.log('Request body:', req.body);
+    console.log('Profile image URL:', profileImage);
+    
     const userId = req.userId;
-    const user = await User.findById(userId);
-    if (!user) {
+    
+    // Use findByIdAndUpdate instead of save()
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { profilePicture: profileImage },
+      { new: true } // Return the updated document
+    );
+    
+    console.log('Updated user:', updatedUser);
+    
+    if (!updatedUser) {
       return res
         .status(404)
         .json({ success: false, message: "User not found" });
     }
-    user.profilePicture = profileImage;
-    await user.save();
+    
     res.json({
       success: true,
       message: "Profile image uploaded successfully",
       data: {
-        profilePicture: user.profilePicture,
+        profilePicture: updatedUser.profilePicture,
       },
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: "Server error" });
+    console.error('Backend error occurred:', error);
+    console.error('Error message:', error.message);
+    res.status(500).json({ 
+      success: false, 
+      message: "Server error", 
+      error: error.message 
+    });
   }
 };
 
