@@ -2,6 +2,7 @@ const Meal = require("../models/meal.model");
 const User = require("../models/user.model");
 const { generateMealsFromDB } = require("../utils/mealGenerator");
 const MealPlan = require("../models/adminMeal.model");
+const UserMealPlan = require("../models/userMealPlan.model");
 
 function calculateUserMacros(user) {
   const gender = user.gender?.toLowerCase();
@@ -127,83 +128,52 @@ const getUserMeals = async (req, res) => {
       return res.status(404).json({ error: "User not found" });
     }
 
-    const workoutDays = parseInt(user.workoutDays);
     let userGoal;
-    const goal = user.goal;
+    const goal = user.goal?.toLowerCase();
 
-    if (goal === "build muscle mass") {
-      userGoal = "muscle-mass";
-    } else if (goal === "lose weight") {
-      userGoal = "weight-loss";
-    } else if (goal === "bulk up") {
-      userGoal = "bulk-up";
-    }
+    if (goal === "build muscle mass") userGoal = "muscle-mass";
+    else if (goal === "lose weight") userGoal = "weight-loss";
+    else if (goal === "bulk up") userGoal = "bulk-up";
+    else
+      return res
+        .status(400)
+        .json({ error: "User goal is not valid or supported." });
 
-    const plans = await MealPlan.find({
-      planTitle: userGoal,
+    let userMealPlan = await UserMealPlan.findOne({
+      userId,
     }).lean();
 
-    const transformedData = transformMealPlans(plans);
+    if (!userMealPlan) {
+      const adminMealPlan = await MealPlan.findOne({ type: userGoal }).lean();
 
-    res.json({
+      if (!adminMealPlan) {
+        return res.status(404).json({ error: "Admin meal plan not found." });
+      }
+      userMealPlan = await UserMealPlan.create({
+        id: adminMealPlan.id, // same unique ID
+        userId,
+        title: adminMealPlan.title,
+        type: adminMealPlan.type,
+        days: adminMealPlan.days,
+        totalCalories: adminMealPlan.totalCalories,
+        totalProtein: adminMealPlan.totalProtein,
+        totalFat: adminMealPlan.totalFat,
+        totalCarbs: adminMealPlan.totalCarbs,
+      });
+    }
+
+    res.status(200).json({
       success: true,
-      data: transformedData,
+      data: userMealPlan,
     });
   } catch (err) {
-    console.error("Error in getUserWorkout:", err);
+    console.error("Error in getUserMeals:", err);
     res.status(500).json({
       success: false,
       error: "Something went wrong",
       details: err.message,
     });
   }
-};
-
-const transformMealPlans = (plans) => {
-  const mealTypeMap = {
-    breakfast: null,
-    lunch: null,
-    dinner: null,
-    snack: null,
-  };
-
-  // Process each plan to find the first occurrence of each meal type
-  for (const plan of plans) {
-    // Check if this plan contains any specific meal type
-    const mealTypeInPlan = getMealTypeFromPlan(plan);
-
-    if (mealTypeInPlan && !mealTypeMap[mealTypeInPlan]) {
-      // Clone the plan and add the meal type as key
-      const transformedPlan = {
-        _id: plan._id,
-        planTitle: plan.planTitle,
-        createdAt: plan.createdAt,
-        updatedAt: plan.updatedAt,
-        __v: plan.__v,
-      };
-
-      // Add the days array under the meal type key
-      transformedPlan[mealTypeInPlan] = plan.days;
-
-      mealTypeMap[mealTypeInPlan] = transformedPlan;
-    }
-  }
-
-  // Convert to array, filtering out null values
-  return Object.values(mealTypeMap).filter((plan) => plan !== null);
-};
-
-const getMealTypeFromPlan = (plan) => {
-  // Check the first day's first meal option to determine the meal type of this plan
-  if (
-    plan.days &&
-    plan.days.length > 0 &&
-    plan.days[0].mealOptions &&
-    plan.days[0].mealOptions.length > 0
-  ) {
-    return plan.days[0].mealOptions[0].mealType;
-  }
-  return null;
 };
 
 module.exports = {

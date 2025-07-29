@@ -35,4 +35,45 @@ const saveWorkoutPlan = async (req, res) => {
   }
 };
 
-module.exports = { saveWorkoutPlan };
+const updateWorkoutPlan = async (req, res) => {
+  const { id } = req.params; 
+  const { planId, days } = req.body;
+  try {
+    const existingPlan = await WorkoutPlan.findById(id);
+    if (!existingPlan) {
+      return res.status(404).json({ message: "Workout plan not found" });
+    }
+
+    existingPlan.planId = planId;
+    existingPlan.days = days;
+
+    await existingPlan.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Workout plan updated successfully",
+      plan: existingPlan,
+    });
+  } catch (error) {
+    console.error("Error updating workout plan:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+const getAllWorkoutPlans = async (req, res) => {
+  try {
+    const plans = await WorkoutPlan.find()
+      .populate({
+        path: 'days.exercises',
+        model: 'Workout',  
+      });
+      
+    res.status(200).json({ success: true, plans });
+  } catch (error) {
+    console.error("Error fetching workout plans:", error);
+    res.status(500).json({ message: "Server error", error });
+  }
+};
+
+
+module.exports = { saveWorkoutPlan, getAllWorkoutPlans, updateWorkoutPlan };
