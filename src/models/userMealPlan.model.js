@@ -30,9 +30,14 @@ const daySchema = new mongoose.Schema(
   { _id: false }
 );
 
-const mealPlanSchema = new mongoose.Schema(
+const userMealPlanSchema = new mongoose.Schema(
   {
     id: { type: String, required: true },
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
     title: { type: String, required: true },
     type: {
       type: String,
@@ -52,4 +57,4 @@ const mealPlanSchema = new mongoose.Schema(
   }
 );
 
-module.exports = mongoose.model("MealPlan", mealPlanSchema);
+module.exports = mongoose.model("UserMealPlan", userMealPlanSchema);

@@ -24,7 +24,6 @@ const updateProfile = async (req, res) => {
       activityLevel,
       goal,
       workoutDays,
-      profilePicture,
       profileComplete,
       mealType,
     } = req.body;
@@ -43,7 +42,6 @@ const updateProfile = async (req, res) => {
             mealType
           );
 
-    const profileUrl = req.file?.path;
     const updatedUser = await User.findByIdAndUpdate(
       req.userId,
       {
@@ -55,7 +53,6 @@ const updateProfile = async (req, res) => {
         activityLevel,
         goal,
         workoutDays,
-        profilePicture: profileUrl,
         mealType,
         profileComplete: isProfileComplete,
       },
@@ -106,21 +103,27 @@ const updateCurrentWeight = async (req, res) => {
 const updateFullName = async (req, res) => {
   try {
     const { fullname } = req.body;
-    
+
     // Validate fullname
-    if (!fullname || typeof fullname !== "string" || fullname.trim().length === 0) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Full name is required and cannot be empty" });
+    if (
+      !fullname ||
+      typeof fullname !== "string" ||
+      fullname.trim().length === 0
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Full name is required and cannot be empty",
+      });
     }
 
     const trimmedFullname = fullname.trim();
-    
+
     // Check if fullname is at least 2 characters long
     if (trimmedFullname.length < 2) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Full name must be at least 2 characters long" });
+      return res.status(400).json({
+        success: false,
+        message: "Full name must be at least 2 characters long",
+      });
     }
 
     const updatedUser = await User.findByIdAndUpdate(
@@ -139,8 +142,8 @@ const updateFullName = async (req, res) => {
       success: true,
       message: "Full name updated successfully",
       data: {
-        fullname: updatedUser.fullname
-      }
+        fullname: updatedUser.fullname,
+      },
     });
   } catch (error) {
     console.error("Error updating full name:", error);
@@ -148,4 +151,51 @@ const updateFullName = async (req, res) => {
   }
 };
 
-module.exports = { getProfile, updateProfile, updateCurrentWeight, updateFullName };
+const uploadProfileImage = async (req, res) => {
+  try {
+    const profileImage = req.file?.path;
+    console.log('Request body:', req.body);
+    console.log('Profile image URL:', profileImage);
+    
+    const userId = req.userId;
+    
+    // Use findByIdAndUpdate instead of save()
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { profilePicture: profileImage },
+      { new: true } // Return the updated document
+    );
+    
+    console.log('Updated user:', updatedUser);
+    
+    if (!updatedUser) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    }
+    
+    res.json({
+      success: true,
+      message: "Profile image uploaded successfully",
+      data: {
+        profilePicture: updatedUser.profilePicture,
+      },
+    });
+  } catch (error) {
+    console.error('Backend error occurred:', error);
+    console.error('Error message:', error.message);
+    res.status(500).json({ 
+      success: false, 
+      message: "Server error", 
+      error: error.message 
+    });
+  }
+};
+
+module.exports = {
+  getProfile,
+  updateProfile,
+  updateCurrentWeight,
+  updateFullName,
+  uploadProfileImage,
+};
