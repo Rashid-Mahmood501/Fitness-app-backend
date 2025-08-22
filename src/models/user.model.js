@@ -33,7 +33,7 @@ const userSchema = new mongoose.Schema({
   weight: { type: Number },
   currentWeight: { type: Number },
   height: { type: Number },
-  mealType: {type: String},
+  mealType: { type: String },
   activityLevel: {
     type: String,
     enum: [
@@ -46,8 +46,9 @@ const userSchema = new mongoose.Schema({
   },
   goal: { type: String, enum: ["build muscle mass", "lose weight", "bulk up"] },
   workoutDays: { type: String },
-  profilePicture: { type: String , default: ""},
+  profilePicture: { type: String, default: "" },
   profileComplete: { type: Boolean, default: false },
+  stripeCustomerId: { type: String, default: null },
   mealGenerated: { type: Boolean, default: false },
 });
 

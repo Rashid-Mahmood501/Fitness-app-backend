@@ -13,7 +13,10 @@ const adminWorkoutCategoryRoutes = require("./src/routes/adminWorkoutCategory.ro
 const adminWorkoutPlanRoutes = require("./src/routes/adminWorkoutPlan.routes");
 const adminMeetingRoutes = require("./src/routes/adminMeeting.routes");
 const bookingRoutes = require("./src/routes/booking.routes");
+const subscriptionRoutes = require("./src/routes/subscription.route");
 const cors = require("cors");
+const stripe = require("./src/config/stripe");
+const { webhookHandler } = require("./src/controllers/subscription.controller");
 
 const app = express();
 const port = process.env.PORT || 3005;
@@ -25,10 +28,20 @@ const corsOptions = {
     if (origin.startsWith("http://localhost:")) {
       return callback(null, true);
     }
-    if (origin.startsWith("https://deepskyblue-zebra-292697.hostingersite.com")) {
+    if (
+      origin.startsWith("https://deepskyblue-zebra-292697.hostingersite.com")
+    ) {
       return callback(null, true);
     }
     if (origin === "https://admin-fitness-app.onrender.com") {
+      return callback(null, true);
+    }
+
+    if (
+      origin === "https://js.stripe.com" || // Stripe.js
+      origin === "https://checkout.stripe.com" || // Stripe Checkout
+      origin === "https://connect.stripe.com" // Stripe Connect
+    ) {
       return callback(null, true);
     }
 
@@ -75,8 +88,20 @@ app.use((req, res, next) => {
   }
 });
 
+app.use("/api/subscription/webhook", express.raw({ type: "application/json" }), webhookHandler);
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Test Stripe connection (optional)
+const testStripeConnection = async () => {
+  try {
+    const account = await stripe.accounts.retrieve();
+    console.log("✅ Stripe connected successfully:", account.id);
+  } catch (error) {
+    console.error("❌ Stripe connection failed:", error.message);
+  }
+};
 
 app.use("/admin/meal", adminMealRoutes);
 app.use("/admin/supplement", adminSupplementRoutes);
@@ -90,6 +115,7 @@ app.use("/api/meal", mealRoutes);
 app.use("/api/workout", workoutRoutes);
 app.use("/api/supplement", supplementRoutes);
 app.use("/api/booking", bookingRoutes);
+app.use("/api/subscription", subscriptionRoutes);
 
 app.get("/", (req, res) => {
   res.send("Welcome to Fitness App!!!!!");
@@ -99,6 +125,7 @@ connectDB()
   .then(() => {
     app.listen(port, () => {
       console.log(`Server is running on port ${port}`);
+      testStripeConnection();
     });
   })
   .catch((err) => {
