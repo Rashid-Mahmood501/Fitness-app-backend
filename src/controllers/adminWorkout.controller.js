@@ -62,8 +62,8 @@ const createWorkout = async (req, res) => {
 const updateWorkout = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, muscleGroup, setType, reps, comments, suggestion } = req.body;
-    const videoUrl = req.file?.path;
+    const { name, muscleGroup, setType, reps, comments, suggestion, video } =
+      req.body;
 
     // Fetch the existing workout first
     const existingWorkout = await Workout.findById(id);
@@ -81,7 +81,7 @@ const updateWorkout = async (req, res) => {
         reps,
         comments,
         suggestion,
-        video: videoUrl || existingWorkout.video,
+        video: video || existingWorkout.video,
       },
       { new: true }
     );

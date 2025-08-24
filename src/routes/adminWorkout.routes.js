@@ -10,7 +10,7 @@ const {
 const router = express.Router();
 
 router.post("/save",  createWorkout);
-router.put("/update/:id", videoUpload.single("video"), updateWorkout);
+router.put("/update/:id", updateWorkout);
 router.post("/upload-video", videoUpload.single("video"), uploadVideo);
 router.get("/all", allWorkouts);
 module.exports = router;
