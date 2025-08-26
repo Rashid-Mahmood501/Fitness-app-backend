@@ -9,6 +9,7 @@ const createWorkout = async (req, res) => {
       muscleGroup,
       reps,
       additionalComments,
+      cardImage,
       workoutSuggestion,
       alternativeExercises = [],
     } = req.body;
@@ -21,6 +22,7 @@ const createWorkout = async (req, res) => {
       comments: additionalComments,
       suggestion: workoutSuggestion,
       video,
+      cardImage,
     });
     await mainWorkout.save();
 
@@ -40,6 +42,7 @@ const createWorkout = async (req, res) => {
             comments: ex.additionalComments,
             suggestion: ex.workoutSuggestion,
             video: ex.video,
+            cardImage: ex.cardImage || "",
             parentId: mainWorkout._id,
           });
           await altWorkout.save();
@@ -62,7 +65,7 @@ const createWorkout = async (req, res) => {
 const updateWorkout = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, muscleGroup, setType, reps, comments, suggestion, video } =
+    const { name, muscleGroup, setType, reps, comments, suggestion, video, cardImage } =
       req.body;
 
     // Fetch the existing workout first
@@ -82,6 +85,7 @@ const updateWorkout = async (req, res) => {
         comments,
         suggestion,
         video: video || existingWorkout.video,
+        cardImage: cardImage || existingWorkout.cardImage,
       },
       { new: true }
     );

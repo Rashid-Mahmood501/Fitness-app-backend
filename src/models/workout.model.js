@@ -11,6 +11,7 @@ const workoutSchema = new mongoose.Schema(
     comments: { type: String },
     suggestion: { type: String },
     video: { type: String },
+    cardImage: { type: String, default: "" },
   },
   {
     timestamps: true,
