@@ -8,8 +8,10 @@ const {
   cancelSubscription,
 } = require("../controllers/subscription.controller");
 
-router.post("/create", authMiddleware, createSubscription);
-router.get("/status", authMiddleware, getSubscriptionStatus);
-router.post("/cancel", authMiddleware, cancelSubscription);
+// router.post("/create-customer", authMiddleware, createCustomer);
+// router.post("/create-setup-intent", authMiddleware, createSetupIntent);
+router.post("/create-subscription",  createSubscription);
+router.get("/subscription-status",  getSubscriptionStatus);
+router.post("/cancel-subscription",  cancelSubscription);
 
 module.exports = router;
