@@ -27,27 +27,21 @@ const getOrCreateCustomer = async (userId) => {
 
 const createSubscription = async (req, res) => {
   try {
-    console.log("======================log=================");
     const { paymentMethodId, priceId } = req.body;
-    // const userId = req.userId; // From your auth middleware
-    const userId = "68a75f485a17a672b67b3a53";
+    const userId = req.userId;
 
-    // Get or create Stripe customer
     const customerId = await getOrCreateCustomer(userId);
 
-    // Attach payment method to customer
     await stripe.paymentMethods.attach(paymentMethodId, {
       customer: customerId,
     });
 
-    // Set as default payment method
     await stripe.customers.update(customerId, {
       invoice_settings: {
         default_payment_method: paymentMethodId,
       },
     });
 
-    // Create subscription
     const subscription = await stripe.subscriptions.create({
       customer: customerId,
       items: [{ price: priceId }],
@@ -55,11 +49,9 @@ const createSubscription = async (req, res) => {
       expand: ["latest_invoice.payment_intent", "latest_invoice"],
     });
 
-    // Helper to convert unix seconds to Date safely
     const tsToDate = (ts) =>
       typeof ts === "number" && !isNaN(ts) ? new Date(ts * 1000) : undefined;
 
-    // Determine latest invoice id safely (could be string or object or null)
     const latestInvoiceId = (() => {
       const li = subscription.latest_invoice;
       if (!li) return undefined;
@@ -68,7 +60,6 @@ const createSubscription = async (req, res) => {
       return undefined;
     })();
 
-    // Save subscription to database
     const newSubscription = new Subscription({
       user: userId,
       stripeCustomerId: customerId,
@@ -97,9 +88,12 @@ const createSubscription = async (req, res) => {
 const getSubscriptionStatus = async (req, res) => {
   try {
     const userId = req.userId;
-    const subscriptions = await Subscription.find({ user: userId }).sort({
-      createdAt: -1,
-    });
+    const subscriptions = await Subscription.find({ user: userId })
+      .sort({
+        createdAt: -1,
+      })
+      .limit(1);
+
     res.json(subscriptions);
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -189,13 +183,15 @@ const webhookHandler = async (req, res) => {
 async function handleSubscriptionCreated(subscription) {
   console.log("Subscription created:", subscription.id);
 
-  // Update existing subscription or create if doesn't exist
+  const tsToDate = (ts) =>
+    typeof ts === "number" && !isNaN(ts) ? new Date(ts * 1000) : undefined;
+
   await Subscription.findOneAndUpdate(
     { stripeSubscriptionId: subscription.id },
     {
       status: subscription.status,
-      currentPeriodStart: new Date(subscription.current_period_start * 1000),
-      currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+      currentPeriodStart: tsToDate(subscription.current_period_start),
+      currentPeriodEnd: tsToDate(subscription.current_period_end),
       cancelAtPeriodEnd: subscription.cancel_at_period_end,
     },
     { upsert: false }
@@ -205,19 +201,18 @@ async function handleSubscriptionCreated(subscription) {
 async function handleSubscriptionUpdated(subscription) {
   console.log("Subscription updated:", subscription.id);
 
+  const tsToDate = (ts) =>
+    typeof ts === "number" && !isNaN(ts) ? new Date(ts * 1000) : undefined;
+
   await Subscription.findOneAndUpdate(
     { stripeSubscriptionId: subscription.id },
     {
       status: subscription.status,
-      currentPeriodStart: new Date(subscription.current_period_start * 1000),
-      currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+      currentPeriodStart: tsToDate(subscription.current_period_start),
+      currentPeriodEnd: tsToDate(subscription.current_period_end),
       cancelAtPeriodEnd: subscription.cancel_at_period_end,
-      cancelAt: subscription.cancel_at
-        ? new Date(subscription.cancel_at * 1000)
-        : null,
-      endedAt: subscription.ended_at
-        ? new Date(subscription.ended_at * 1000)
-        : null,
+      cancelAt: tsToDate(subscription.cancel_at),
+      endedAt: tsToDate(subscription.ended_at),
     }
   );
 }
