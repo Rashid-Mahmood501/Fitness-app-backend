@@ -22,13 +22,11 @@ const saveWorkoutPlan = async (req, res) => {
 
     await newPlan.save();
 
-    res
-      .status(201)
-      .json({
-        success: true,
-        message: "Workout plan created successfully",
-        plan: newPlan,
-      });
+    res.status(201).json({
+      success: true,
+      message: "Workout plan created successfully",
+      plan: newPlan,
+    });
   } catch (error) {
     console.error("Error creating workout plan:", error);
     res.status(500).json({ message: "Server error", error });
@@ -36,7 +34,7 @@ const saveWorkoutPlan = async (req, res) => {
 };
 
 const updateWorkoutPlan = async (req, res) => {
-  const { id } = req.params; 
+  const { id } = req.params;
   const { planId, days } = req.body;
   try {
     const existingPlan = await WorkoutPlan.findById(id);
@@ -62,12 +60,11 @@ const updateWorkoutPlan = async (req, res) => {
 
 const getAllWorkoutPlans = async (req, res) => {
   try {
-    const plans = await WorkoutPlan.find()
-      .populate({
-        path: 'days.exercises',
-        model: 'Workout',  
-      });
-      
+    const plans = await WorkoutPlan.find().populate({
+      path: "days.exercises",
+      model: "Workout",
+    });
+
     res.status(200).json({ success: true, plans });
   } catch (error) {
     console.error("Error fetching workout plans:", error);
@@ -75,5 +72,29 @@ const getAllWorkoutPlans = async (req, res) => {
   }
 };
 
+const deleteWorkoutPlan = async (req, res) => {
+  const { id } = req.params;
 
-module.exports = { saveWorkoutPlan, getAllWorkoutPlans, updateWorkoutPlan };
+  try {
+    const workoutPlan = await WorkoutPlan.findByIdAndDelete(id);
+    if (!workoutPlan) {
+      return res.status(404).json({ message: "Workout plan not found" });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Workout plan deleted successfully",
+      data: workoutPlan,
+    });
+  } catch (error) {
+    console.error("Error deleting workout plan:", error);
+    res.status(500).json({ message: "Server error", error });
+  }
+};
+
+module.exports = {
+  saveWorkoutPlan,
+  getAllWorkoutPlans,
+  updateWorkoutPlan,
+  deleteWorkoutPlan,
+};

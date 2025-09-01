@@ -392,6 +392,46 @@ const addUserMealToDay = async (req, res) => {
   }
 };
 
+const deleteUserMealPlan = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const mealPlan = await UserMealPlan.findByIdAndDelete(id);
+    if (!mealPlan) {
+      return res.status(404).json({ message: "Meal plan not found" });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Meal plan deleted successfully",
+      data: mealPlan,
+    });
+  } catch (error) {
+    console.error("Delete meal plan error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+const deleteMealPlan = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const mealPlan = await MealPlan.findByIdAndDelete(id);
+    if (!mealPlan) {
+      return res.status(404).json({ message: "Meal plan not found" });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Meal plan deleted successfully",
+      data: mealPlan,
+    });
+  } catch (error) {
+    console.error("Delete meal plan error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
 module.exports = {
   saveMeal,
   uploadImage,
@@ -403,6 +443,8 @@ module.exports = {
   updateUserMealInDay,
   deleteUserMealFromDay,
   addUserMealToDay,
+  deleteUserMealPlan,
+  deleteMealPlan,
   // getAllMeals,
   // updateMeal,
   // deleteMeal,
