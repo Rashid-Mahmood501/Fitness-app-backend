@@ -32,6 +32,42 @@ const createSubscription = async (req, res) => {
 
     const customerId = await getOrCreateCustomer(userId);
 
+    // Handle Apple Pay differently
+    if (paymentMethodId === "apple_pay") {
+      // For Apple Pay, we'll create a payment intent instead of attaching a payment method
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: 999, // $9.99 in cents
+        currency: "usd",
+        customer: customerId,
+        automatic_payment_methods: {
+          enabled: true,
+        },
+        metadata: {
+          userId: userId,
+          priceId: priceId,
+        },
+      });
+
+      // Create subscription record with pending status
+      const newSubscription = new Subscription({
+        user: userId,
+        stripeCustomerId: customerId,
+        stripeSubscriptionId: `pi_${paymentIntent.id}`, // Temporary ID
+        priceId: priceId,
+        status: "incomplete",
+        defaultPaymentMethod: "apple_pay",
+      });
+
+      await newSubscription.save();
+
+      res.json({
+        clientSecret: paymentIntent.client_secret,
+        status: "incomplete",
+      });
+      return;
+    }
+
+    // Regular card payment flow
     await stripe.paymentMethods.attach(paymentMethodId, {
       customer: customerId,
     });
@@ -126,6 +162,56 @@ const cancelSubscription = async (req, res) => {
   }
 };
 
+// Add new function to handle Apple Pay subscription completion
+const completeApplePaySubscription = async (req, res) => {
+  try {
+    const { paymentIntentId, priceId } = req.body;
+    const userId = req.userId;
+
+    const customerId = await getOrCreateCustomer(userId);
+
+    // Create the actual subscription after successful Apple Pay payment
+    const subscription = await stripe.subscriptions.create({
+      customer: customerId,
+      items: [{ price: priceId }],
+      payment_behavior: "default_incomplete",
+      expand: ["latest_invoice.payment_intent"],
+    });
+
+    const tsToDate = (ts) =>
+      typeof ts === "number" && !isNaN(ts) ? new Date(ts * 1000) : undefined;
+
+    const latestInvoiceId = (() => {
+      const li = subscription.latest_invoice;
+      if (!li) return undefined;
+      if (typeof li === "string") return li;
+      if (typeof li === "object" && li.id) return li.id;
+      return undefined;
+    })();
+
+    // Update the subscription record
+    await Subscription.findOneAndUpdate(
+      { user: userId, stripeSubscriptionId: `pi_${paymentIntentId}` },
+      {
+        stripeSubscriptionId: subscription.id,
+        status: subscription.status,
+        currentPeriodStart: tsToDate(subscription.current_period_start),
+        currentPeriodEnd: tsToDate(subscription.current_period_end),
+        defaultPaymentMethod: "apple_pay",
+        latestInvoiceId: latestInvoiceId,
+      }
+    );
+
+    res.json({
+      subscriptionId: subscription.id,
+      status: subscription.status,
+    });
+  } catch (error) {
+    console.error("Apple Pay subscription completion error:", error);
+    res.status(400).json({ error: error.message });
+  }
+};
+
 const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
 const webhookHandler = async (req, res) => {
@@ -167,6 +253,11 @@ const webhookHandler = async (req, res) => {
 
       case "invoice.payment_failed":
         await handlePaymentFailed(event.data.object);
+        break;
+
+      // Handle Apple Pay payment intent succeeded
+      case "payment_intent.succeeded":
+        await handlePaymentIntentSucceeded(event.data.object);
         break;
 
       default:
@@ -256,9 +347,30 @@ async function handlePaymentFailed(invoice) {
     );
   }
 }
+
+// New handler for Apple Pay payment intent success
+async function handlePaymentIntentSucceeded(paymentIntent) {
+  console.log("Payment intent succeeded:", paymentIntent.id);
+
+  // If this is an Apple Pay payment, we might need to create a subscription
+  if (paymentIntent.metadata && paymentIntent.metadata.priceId) {
+    const userId = paymentIntent.metadata.userId;
+    const priceId = paymentIntent.metadata.priceId;
+
+    // Update the subscription status
+    await Subscription.findOneAndUpdate(
+      { user: userId, stripeSubscriptionId: `pi_${paymentIntent.id}` },
+      {
+        status: "active",
+      }
+    );
+  }
+}
+
 module.exports = {
   webhookHandler,
   createSubscription,
   getSubscriptionStatus,
   cancelSubscription,
+  completeApplePaySubscription,
 };
