@@ -65,8 +65,16 @@ const createWorkout = async (req, res) => {
 const updateWorkout = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, muscleGroup, setType, reps, comments, suggestion, video, cardImage } =
-      req.body;
+    const {
+      name,
+      muscleGroup,
+      setType,
+      reps,
+      comments,
+      suggestion,
+      video,
+      cardImage,
+    } = req.body;
 
     // Fetch the existing workout first
     const existingWorkout = await Workout.findById(id);
@@ -130,9 +138,25 @@ const allWorkouts = async (req, res) => {
   }
 };
 
+const deleteWorkout = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const workout = await Workout.findByIdAndDelete(id);
+    if (!workout) {
+      return res.status(404).json({ error: "Workout not found" });
+    }
+
+    res.json({ success: true, message: "Workout deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 module.exports = {
   createWorkout,
   allWorkouts,
   updateWorkout,
   uploadVideo,
+  deleteWorkout,
 };

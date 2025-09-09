@@ -37,8 +37,29 @@ const updateWorkoutCategory = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+const deleteWorkoutCategory = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const workoutCategory = await WorkoutCategory.findByIdAndDelete(id);
+    if (!workoutCategory) {
+      return res.status(404).json({ message: "Workout category not found" });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Workout category deleted successfully",
+      data: workoutCategory,
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 module.exports = {
   saveWorkoutCategory,
   getAllWorkoutCategories,
   updateWorkoutCategory,
+  deleteWorkoutCategory,
 };

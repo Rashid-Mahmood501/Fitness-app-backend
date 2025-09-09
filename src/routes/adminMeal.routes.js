@@ -10,6 +10,8 @@ const {
   updateUserMealInDay,
   deleteUserMealFromDay,
   addUserMealToDay,
+  deleteUserMealPlan,
+  deleteMealPlan,
 } = require("../controllers/adminMeal.controller");
 const { imageUpload } = require("../middlewares/upload");
 const router = express.Router();
@@ -23,7 +25,8 @@ router.get("/all", getAllMealsPlans);
 router.delete("/delete-meal-from-day", deleteMealFromDay);
 router.delete("/delete-user-meal-from-day", deleteUserMealFromDay);
 router.get("/all-user-meal-plans", getAllUserMealPlans);
-
+router.delete("/delete-user-meal-plan/:id", deleteUserMealPlan);
+router.delete("/delete-meal-plan/:id", deleteMealPlan);
 
 router.post("/upload-image", imageUpload.single("image"), uploadImage);
 
