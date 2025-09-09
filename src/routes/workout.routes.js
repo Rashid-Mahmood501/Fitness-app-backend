@@ -4,9 +4,10 @@ const {
   getUserWorkout,
   getAllWorkoutCategories,
 } = require("../controllers/workout.controller");
+const subscriptionMiddleware = require("../middlewares/subscription.middleware");
 const router = express.Router();
 
-router.get("/get", authMiddleware, getUserWorkout);
+router.get("/get", authMiddleware, subscriptionMiddleware, getUserWorkout);
 router.get("/workout-category", authMiddleware, getAllWorkoutCategories);
 
 module.exports = router;
