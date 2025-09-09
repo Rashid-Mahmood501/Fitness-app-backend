@@ -36,6 +36,9 @@ const corsOptions = {
     if (origin === "https://admin-fitness-app.onrender.com") {
       return callback(null, true);
     }
+    if (origin === "https://admin-fitness-app.vercel.app") {
+      return callback(null, true);
+    }
 
     if (
       origin === "https://js.stripe.com" || // Stripe.js
