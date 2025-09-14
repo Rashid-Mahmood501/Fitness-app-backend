@@ -11,7 +11,7 @@ const authMiddleware = require("../middlewares/auth.middleware");
 const { imageUpload } = require("../middlewares/upload");
 const subscriptionMiddleware = require("../middlewares/subscription.middleware");
 
-router.get("/profile", authMiddleware, subscriptionMiddleware, getProfile);
+router.get("/profile", authMiddleware,  getProfile);
 router.put("/profile", authMiddleware, updateProfile);
 router.post(
   "/update-weight",
