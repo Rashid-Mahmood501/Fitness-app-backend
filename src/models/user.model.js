@@ -36,13 +36,6 @@ const userSchema = new mongoose.Schema({
   mealType: { type: String },
   activityLevel: {
     type: String,
-    enum: [
-      "sedentary",
-      "lightly active",
-      "moderately active",
-      "very active",
-      "extra active",
-    ],
   },
   goal: { type: String, enum: ["build muscle mass", "lose weight", "bulk up"] },
   workoutDays: { type: String },
