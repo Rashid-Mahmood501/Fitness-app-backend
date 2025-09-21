@@ -15,6 +15,7 @@ const adminMeetingRoutes = require("./src/routes/adminMeeting.routes");
 const bookingRoutes = require("./src/routes/booking.routes");
 const subscriptionRoutes = require("./src/routes/subscription.route");
 const userWorkoutPlanRoutes = require("./src/routes/adminUserWorkoutPlan.routes");
+const userPersonalizedMealandWorkoutRoutes = require("./src/routes/userPersonalizedMealandWorkout.routes");
 const cors = require("cors");
 const stripe = require("./src/config/stripe");
 const { webhookHandler } = require("./src/controllers/subscription.controller");
@@ -121,6 +122,7 @@ app.use("/api/workout", workoutRoutes);
 app.use("/api/supplement", supplementRoutes);
 app.use("/api/booking", bookingRoutes);
 app.use("/api/subscription", subscriptionRoutes);
+app.use("/api/user-personalized", userPersonalizedMealandWorkoutRoutes);
 
 app.get("/", (req, res) => {
   res.send("Welcome to Fitness App!!!!!");

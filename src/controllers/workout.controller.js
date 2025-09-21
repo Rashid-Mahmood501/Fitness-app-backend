@@ -31,7 +31,6 @@ const getUserWorkout = async (req, res) => {
     let plans = await UserWorkoutPlan.find({
       userId,
       planId: userGoal,
-      $expr: { $eq: [{ $size: "$days" }, workoutDays] },
     })
       .populate("days.exercises")
       .lean();
