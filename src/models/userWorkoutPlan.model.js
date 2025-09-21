@@ -8,6 +8,7 @@ const workoutPlanSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+    isCustomized: { type: Boolean, default: false },
     days: [
       {
         dayNumber: { type: Number, required: true },

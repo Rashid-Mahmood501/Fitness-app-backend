@@ -57,6 +57,28 @@ const getAllMealsPlans = async (req, res) => {
   }
 };
 
+const saveUserMeal = async (req, res) => {
+  try {
+    userId = req.body.userId;
+    const mealPlans = await UserMealPlan.findOne({ userId });
+    if (!mealPlans) {
+      return res.status(404).json({ message: "Meal plan not found for user" });
+    }
+    mealPlans.isCustomized = true;
+    await mealPlans.save();
+    res.status(200).json({
+      success: true,
+      data: mealPlans,
+    });
+  } catch (error) {
+    console.error("Error fetching meal plans:", error);
+    res.status(500).json({
+      message: "Server error while fetching meal plans",
+      error: error.message,
+    });
+  }
+};
+
 const updateMealInDay = async (req, res) => {
   const {
     mealPlanId,
@@ -445,6 +467,7 @@ module.exports = {
   addUserMealToDay,
   deleteUserMealPlan,
   deleteMealPlan,
+  saveUserMeal,
   // getAllMeals,
   // updateMeal,
   // deleteMeal,

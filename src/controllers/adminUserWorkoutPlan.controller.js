@@ -11,6 +11,7 @@ const updateWorkoutPlan = async (req, res) => {
 
     existingPlan.planId = planId;
     existingPlan.days = days;
+    existingPlan.isCustomized = true;
 
     await existingPlan.save();
 
