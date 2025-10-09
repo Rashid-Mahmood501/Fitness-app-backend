@@ -28,6 +28,21 @@ const updateProfile = async (req, res) => {
       mealType,
     } = req.body;
 
+    const updateData = {};
+
+    if (age !== undefined) updateData.age = age;
+    if (gender !== undefined) updateData.gender = gender;
+    if (weight !== undefined) {
+      updateData.weight = weight;
+      updateData.currentWeight = weight;
+    }
+    if (height !== undefined) updateData.height = height;
+    if (activityLevel !== undefined) updateData.activityLevel = activityLevel;
+    if (goal !== undefined) updateData.goal = goal;
+    if (workoutDays !== undefined) updateData.workoutDays = workoutDays;
+    if (mealType !== undefined) updateData.mealType = mealType;
+
+    // Determine profile completion status
     const isProfileComplete =
       typeof profileComplete === "boolean"
         ? profileComplete
@@ -42,33 +57,25 @@ const updateProfile = async (req, res) => {
             mealType
           );
 
-    const updatedUser = await User.findByIdAndUpdate(
-      req.userId,
-      {
-        age,
-        gender,
-        weight,
-        height,
-        currentWeight: weight,
-        activityLevel,
-        goal,
-        workoutDays,
-        mealType,
-        profileComplete: isProfileComplete,
-      },
-      { new: true }
-    ).select("-password");
+    updateData.profileComplete = isProfileComplete;
+
+    const updatedUser = await User.findByIdAndUpdate(req.userId, updateData, {
+      new: true,
+    }).select("-password");
 
     if (!updatedUser) {
       return res
         .status(404)
         .json({ success: false, message: "User not found" });
     }
+
     res.json({
+      success: true,
       message: "Profile updated successfully",
       profileComplete: isProfileComplete,
     });
   } catch (error) {
+    console.error("Error updating profile:", error);
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
@@ -154,26 +161,26 @@ const updateFullName = async (req, res) => {
 const uploadProfileImage = async (req, res) => {
   try {
     const profileImage = req.file?.path;
-    console.log('Request body:', req.body);
-    console.log('Profile image URL:', profileImage);
-    
+    console.log("Request body:", req.body);
+    console.log("Profile image URL:", profileImage);
+
     const userId = req.userId;
-    
+
     // Use findByIdAndUpdate instead of save()
     const updatedUser = await User.findByIdAndUpdate(
       userId,
       { profilePicture: profileImage },
       { new: true } // Return the updated document
     );
-    
-    console.log('Updated user:', updatedUser);
-    
+
+    console.log("Updated user:", updatedUser);
+
     if (!updatedUser) {
       return res
         .status(404)
         .json({ success: false, message: "User not found" });
     }
-    
+
     res.json({
       success: true,
       message: "Profile image uploaded successfully",
@@ -182,12 +189,12 @@ const uploadProfileImage = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Backend error occurred:', error);
-    console.error('Error message:', error.message);
-    res.status(500).json({ 
-      success: false, 
-      message: "Server error", 
-      error: error.message 
+    console.error("Backend error occurred:", error);
+    console.error("Error message:", error.message);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: error.message,
     });
   }
 };

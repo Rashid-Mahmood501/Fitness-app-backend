@@ -29,7 +29,7 @@ const userSchema = new mongoose.Schema({
     default: Date.now,
   },
   age: { type: Number },
-  gender: { type: String, enum: ["male", "female", "other"] },
+  gender: { type: String, enum: ["male", "female", "other"], ddefault: "other" },
   weight: { type: Number },
   currentWeight: { type: Number },
   height: { type: Number },
