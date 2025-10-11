@@ -29,7 +29,11 @@ const userSchema = new mongoose.Schema({
     default: Date.now,
   },
   age: { type: Number },
-  gender: { type: String, enum: ["male", "female", "other"], ddefault: "other" },
+  gender: {
+    type: String,
+    enum: ["male", "female", "other"],
+    ddefault: "other",
+  },
   weight: { type: Number },
   currentWeight: { type: Number },
   height: { type: Number },
@@ -43,6 +47,8 @@ const userSchema = new mongoose.Schema({
   profileComplete: { type: Boolean, default: false },
   stripeCustomerId: { type: String, default: null },
   mealGenerated: { type: Boolean, default: false },
+  resetPasswordOTP: { type: String },
+  resetPasswordExpires: { type: Date },
 });
 
 userSchema.pre("save", async function (next) {

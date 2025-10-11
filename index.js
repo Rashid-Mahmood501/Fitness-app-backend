@@ -19,6 +19,7 @@ const userPersonalizedMealandWorkoutRoutes = require("./src/routes/userPersonali
 const cors = require("cors");
 const stripe = require("./src/config/stripe");
 const { webhookHandler } = require("./src/controllers/subscription.controller");
+const { sendEmail } = require("./src/config/email");
 
 const app = express();
 const port = process.env.PORT || 3005;
