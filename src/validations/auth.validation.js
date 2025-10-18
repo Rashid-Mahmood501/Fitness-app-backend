@@ -38,10 +38,9 @@ const signupValidation = Joi.object({
         }),
     phoneNumber: Joi.string()
         .pattern(new RegExp('^[0-9]{10}$'))
-        .required()
+        .optional()
         .messages({
-            'string.pattern.base': 'Phone number must be 10 digits',
-            'any.required': 'Phone number is required'
+            'string.pattern.base': 'Phone number must be 10 digits'
         }),
     password: Joi.string()
         .min(8)
