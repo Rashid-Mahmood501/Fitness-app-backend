@@ -47,6 +47,7 @@ const userMealPlanSchema = new mongoose.Schema(
     days: {
       type: [daySchema],
     },
+    isCustomized: { type: Boolean, default: false },
     totalCalories: { type: Number, required: true },
     totalProtein: { type: Number, required: true },
     totalFat: { type: Number, required: true },

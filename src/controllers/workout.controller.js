@@ -1,5 +1,6 @@
 const User = require("../models/user.model");
 const workoutPlan = require("../models/workoutPlan.model");
+const UserWorkoutPlan = require("../models/userWorkoutPlan.model");
 const Workout = require("../models/workout.model");
 const WorkoutCategory = require("../models/workoutcategory.model");
 
@@ -26,16 +27,46 @@ const getUserWorkout = async (req, res) => {
 
     console.log(userGoal, workoutDays);
 
-    // Find workout plans matching planId and number of days
-    const plans = await workoutPlan
-      .find({
-        planId: userGoal,
-        $expr: { $eq: [{ $size: "$days" }, workoutDays] },
-      })
+    // 1. First check if user already has a saved UserWorkoutPlan
+    let plans = await UserWorkoutPlan.find({
+      userId,
+      planId: userGoal,
+    })
       .populate("days.exercises")
-      .lean(); // Use lean() for better performance since we're modifying the data
+      .lean();
 
-    // Collect all exercise IDs to fetch alternatives in bulk
+    // 2. If no UserWorkoutPlan exists, fetch from WorkoutPlan and create one
+    if (!plans || plans.length === 0) {
+      const basePlans = await workoutPlan
+        .find({
+          planId: userGoal,
+          $expr: { $eq: [{ $size: "$days" }, workoutDays] },
+        })
+        .populate("days.exercises")
+        .lean();
+
+      if (!basePlans || basePlans.length === 0) {
+        return res
+          .status(404)
+          .json({ success: false, error: "No matching workout plan found" });
+      }
+
+      // Save as UserWorkoutPlan(s) for the user
+      const createdPlans = [];
+      for (const basePlan of basePlans) {
+        const newPlan = new UserWorkoutPlan({
+          planId: basePlan.planId,
+          userId,
+          days: basePlan.days,
+        });
+        const savedPlan = await newPlan.save();
+        createdPlans.push(await savedPlan.populate("days.exercises"));
+      }
+
+      plans = createdPlans.map((plan) => plan.toObject());
+    }
+
+    // 3. Collect all exercise IDs to fetch alternatives
     const allExerciseIds = [];
     for (const plan of plans) {
       for (const day of plan.days) {
@@ -45,12 +76,12 @@ const getUserWorkout = async (req, res) => {
       }
     }
 
-    // Fetch all alternatives in one query
+    // 4. Fetch all alternatives in one query
     const allAlternatives = await Workout.find({
       parentId: { $in: allExerciseIds },
     }).lean();
 
-    // Group alternatives by parentId for quick lookup
+    // 5. Group alternatives by parentId for quick lookup
     const alternativesMap = {};
     allAlternatives.forEach((alt) => {
       const parentId = alt.parentId.toString();
@@ -60,7 +91,7 @@ const getUserWorkout = async (req, res) => {
       alternativesMap[parentId].push(alt);
     });
 
-    // Add alternatives to each exercise
+    // 6. Add alternatives to each exercise
     for (const plan of plans) {
       for (const day of plan.days) {
         day.exercises = day.exercises.map((exercise) => ({

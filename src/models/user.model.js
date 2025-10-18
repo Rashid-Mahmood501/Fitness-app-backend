@@ -29,20 +29,17 @@ const userSchema = new mongoose.Schema({
     default: Date.now,
   },
   age: { type: Number },
-  gender: { type: String, enum: ["male", "female", "other"] },
+  gender: {
+    type: String,
+    enum: ["male", "female", "other"],
+    ddefault: "other",
+  },
   weight: { type: Number },
   currentWeight: { type: Number },
   height: { type: Number },
   mealType: { type: String },
   activityLevel: {
     type: String,
-    enum: [
-      "sedentary",
-      "lightly active",
-      "moderately active",
-      "very active",
-      "extra active",
-    ],
   },
   goal: { type: String, enum: ["build muscle mass", "lose weight", "bulk up"] },
   workoutDays: { type: String },
@@ -50,6 +47,8 @@ const userSchema = new mongoose.Schema({
   profileComplete: { type: Boolean, default: false },
   stripeCustomerId: { type: String, default: null },
   mealGenerated: { type: Boolean, default: false },
+  resetPasswordOTP: { type: String },
+  resetPasswordExpires: { type: Date },
 });
 
 userSchema.pre("save", async function (next) {

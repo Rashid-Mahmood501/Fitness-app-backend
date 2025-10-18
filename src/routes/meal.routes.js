@@ -6,9 +6,10 @@ const {
   getUserMeals,
 } = require("../controllers/meal.controller");
 const authMiddleware = require("../middlewares/auth.middleware");
+const subscriptionMiddleware = require("../middlewares/subscription.middleware");
 
 router.get("/suggest", authMiddleware,  suggestAllMeals);
 router.post("/save", authMiddleware, saveUserMeals);
-router.get("/user-meals", authMiddleware, getUserMeals);
+router.get("/user-meals", authMiddleware, subscriptionMiddleware, getUserMeals);
 
 module.exports = router;

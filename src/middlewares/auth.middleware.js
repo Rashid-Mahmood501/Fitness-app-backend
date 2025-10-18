@@ -1,8 +1,7 @@
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
-const Subscription = require("../models/subscription.model");
 
-const authMiddleware = async (req, res, next) => {
+const authMiddleware = (req, res, next) => {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return res
@@ -13,17 +12,6 @@ const authMiddleware = async (req, res, next) => {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     req.userId = decoded.userId;
-    const subscription = await Subscription.findOne({ user: req.userId });
-    if (
-      !subscription ||
-      !["active", "trialing"].includes(subscription.status)
-    ) {
-      return res.status(403).json({
-        success: false,
-        redirectToSubscription: true,
-        message: "Subscription required",
-      });
-    }
     next();
   } catch (err) {
     return res
