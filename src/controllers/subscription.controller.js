@@ -103,7 +103,45 @@ const getSubscriptionStatus = async (req, res) => {
 const cancelSubscription = async (req, res) => {
   try {
     const { subscriptionId } = req.body;
+    const userId = req.userId;
 
+    // Validate input
+    if (!subscriptionId) {
+      return res.status(400).json({ error: "Subscription ID is required" });
+    }
+
+    // Find the subscription in database
+    const subscription = await Subscription.findOne({
+      stripeSubscriptionId: subscriptionId,
+    });
+
+    // Check if subscription exists
+    if (!subscription) {
+      return res.status(404).json({ error: "Subscription not found" });
+    }
+
+    // Verify the subscription belongs to the requesting user
+    if (subscription.user.toString() !== userId.toString()) {
+      return res.status(403).json({ error: "Unauthorized access to subscription" });
+    }
+
+    // Check if subscription is already cancelled or set to cancel
+    if (subscription.status === "canceled") {
+      return res.status(400).json({
+        error: "Subscription is already cancelled",
+        alreadyCancelled: true
+      });
+    }
+
+    if (subscription.cancelAtPeriodEnd) {
+      return res.status(400).json({
+        error: "Subscription is already scheduled for cancellation",
+        alreadyCancelled: true,
+        cancelAt: subscription.cancelAt
+      });
+    }
+
+    // Cancel the subscription in Stripe
     const canceledSubscription = await stripe.subscriptions.update(
       subscriptionId,
       {
@@ -111,18 +149,36 @@ const cancelSubscription = async (req, res) => {
       }
     );
 
-    await Subscription.findOneAndUpdate(
+    // Update local database
+    const updatedSubscription = await Subscription.findOneAndUpdate(
       { stripeSubscriptionId: subscriptionId },
       {
         status: canceledSubscription.status,
         cancelAtPeriodEnd: true,
         cancelAt: new Date(canceledSubscription.cancel_at * 1000),
-      }
+      },
+      { new: true }
     );
 
-    res.json({ status: "canceled" });
+    res.json({
+      success: true,
+      message: "Subscription will be cancelled at the end of the billing period",
+      cancelAt: updatedSubscription.cancelAt,
+      currentPeriodEnd: updatedSubscription.currentPeriodEnd,
+    });
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    console.error("Cancel subscription error:", error);
+
+    // Handle Stripe-specific errors
+    if (error.type === "StripeInvalidRequestError") {
+      return res.status(400).json({
+        error: "Invalid subscription. Please contact support."
+      });
+    }
+
+    res.status(500).json({
+      error: error.message || "Failed to cancel subscription"
+    });
   }
 };
 
@@ -256,9 +312,92 @@ async function handlePaymentFailed(invoice) {
     );
   }
 }
+
+const reactivateSubscription = async (req, res) => {
+  try {
+    const { subscriptionId } = req.body;
+    const userId = req.userId;
+
+    // Validate input
+    if (!subscriptionId) {
+      return res.status(400).json({ error: "Subscription ID is required" });
+    }
+
+    // Find the subscription in database
+    const subscription = await Subscription.findOne({
+      stripeSubscriptionId: subscriptionId,
+    });
+
+    // Check if subscription exists
+    if (!subscription) {
+      return res.status(404).json({ error: "Subscription not found" });
+    }
+
+    // Verify the subscription belongs to the requesting user
+    if (subscription.user.toString() !== userId.toString()) {
+      return res.status(403).json({ error: "Unauthorized access to subscription" });
+    }
+
+    // Check if subscription is already active (not scheduled for cancellation)
+    if (!subscription.cancelAtPeriodEnd) {
+      return res.status(400).json({
+        error: "Subscription is already active and not scheduled for cancellation",
+        alreadyActive: true
+      });
+    }
+
+    // Check if subscription has already ended
+    if (subscription.status === "canceled" && subscription.endedAt) {
+      return res.status(400).json({
+        error: "Subscription has already ended. Please create a new subscription.",
+        subscriptionEnded: true
+      });
+    }
+
+    // Reactivate the subscription in Stripe
+    const reactivatedSubscription = await stripe.subscriptions.update(
+      subscriptionId,
+      {
+        cancel_at_period_end: false,
+      }
+    );
+
+    // Update local database
+    const updatedSubscription = await Subscription.findOneAndUpdate(
+      { stripeSubscriptionId: subscriptionId },
+      {
+        status: reactivatedSubscription.status,
+        cancelAtPeriodEnd: false,
+        cancelAt: null,
+      },
+      { new: true }
+    );
+
+    res.json({
+      success: true,
+      message: "Subscription has been reactivated successfully",
+      subscription: updatedSubscription,
+    });
+  } catch (error) {
+    console.error("Reactivate subscription error:", error);
+
+    // Handle Stripe-specific errors
+    if (error.type === "StripeInvalidRequestError") {
+      return res.status(400).json({
+        error: "Invalid subscription. Please contact support."
+      });
+    }
+
+    res.status(500).json({
+      error: error.message || "Failed to reactivate subscription"
+    });
+  }
+};
+
 module.exports = {
   webhookHandler,
   createSubscription,
   getSubscriptionStatus,
   cancelSubscription,
+  reactivateSubscription,
 };
