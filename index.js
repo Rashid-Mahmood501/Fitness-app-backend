@@ -19,6 +19,7 @@ const userPersonalizedMealandWorkoutRoutes = require("./src/routes/userPersonali
 const cors = require("cors");
 const stripe = require("./src/config/stripe");
 const { webhookHandler } = require("./src/controllers/subscription.controller");
+const { revenueCatWebhook } = require("./src/controllers/revenuecat.controller");
 const { sendEmail } = require("./src/config/email");
 
 const app = express();
@@ -94,7 +95,11 @@ app.use((req, res, next) => {
   }
 });
 
+// Stripe webhook endpoint (requires raw body)
 app.use("/api/subscription/webhook", express.raw({ type: "application/json" }), webhookHandler);
+
+// RevenueCat webhook endpoint (requires JSON body)
+app.use("/api/subscription/revenuecat-webhook", express.json(), revenueCatWebhook);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

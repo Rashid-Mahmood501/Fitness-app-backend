@@ -45,7 +45,21 @@ const userSchema = new mongoose.Schema({
   workoutDays: { type: String },
   profilePicture: { type: String, default: "" },
   profileComplete: { type: Boolean, default: false },
+
+  // DEPRECATED: Stripe fields (kept for reference)
   stripeCustomerId: { type: String, default: null },
+
+  // RevenueCat subscription fields
+  revenueCatUserId: { type: String, default: null },
+  hasActiveSubscription: { type: Boolean, default: false },
+  subscriptionStartDate: { type: Date, default: null },
+  subscriptionExpirationDate: { type: Date, default: null },
+  subscriptionProductId: { type: String, default: null },
+  subscriptionStore: { type: String, default: null }, // 'app_store', 'play_store', etc.
+  subscriptionCancelled: { type: Boolean, default: false },
+  subscriptionCancellationDate: { type: Date, default: null },
+  lastRenewalDate: { type: Date, default: null },
+
   mealGenerated: { type: Boolean, default: false },
   resetPasswordOTP: { type: String },
   resetPasswordExpires: { type: Date },

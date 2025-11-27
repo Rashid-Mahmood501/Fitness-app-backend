@@ -1,4 +1,3 @@
-const subscriptionModel = require("../models/subscription.model");
 const UserModel = require("../models/user.model");
 
 require("dotenv").config();
@@ -12,14 +11,16 @@ const subscriptionMiddleware = async (req, res, next) => {
         .status(404)
         .json({ success: false, message: "User not found" });
     }
+
+    // Bypass subscription check for admin
     if (user.email === "admin@fitness.com") {
       console.log("✅ Admin user, bypassing subscription check");
       return next();
     }
-    const subscription = await subscriptionModel.findOne({ user: req.userId });
 
-    if (!subscription) {
-      console.warn("⚠️ No subscription found for user:", req.userId);
+    // Check RevenueCat subscription status
+    if (!user.hasActiveSubscription) {
+      console.warn("⚠️ No active subscription for user:", req.userId);
       return res.status(403).json({
         success: false,
         redirectToSubscription: true,
@@ -27,16 +28,21 @@ const subscriptionMiddleware = async (req, res, next) => {
       });
     }
 
-    if (!["active", "trialing"].includes(subscription.status)) {
-      console.warn("⚠️ Subscription not active/trialing:", subscription.status);
+    // Check if subscription has expired
+    if (user.subscriptionExpirationDate && new Date(user.subscriptionExpirationDate) < new Date()) {
+      console.warn("⚠️ Subscription expired for user:", req.userId);
+      // Update user status
+      await UserModel.findByIdAndUpdate(req.userId, {
+        hasActiveSubscription: false,
+      });
       return res.status(403).json({
         success: false,
         redirectToSubscription: true,
-        message: "Subscription expired or inactive",
+        message: "Subscription expired",
       });
     }
 
-    console.log("✅ Subscription valid:", subscription.status);
+    console.log("✅ Subscription valid for user:", req.userId);
     next();
   } catch (err) {
     console.error("❌ Subscription check error:", err.message);
