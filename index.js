@@ -14,11 +14,13 @@ const adminWorkoutPlanRoutes = require("./src/routes/adminWorkoutPlan.routes");
 const adminMeetingRoutes = require("./src/routes/adminMeeting.routes");
 const bookingRoutes = require("./src/routes/booking.routes");
 const subscriptionRoutes = require("./src/routes/subscription.route");
+const revenuecatRoutes = require("./src/routes/revenuecat.routes");
 const userWorkoutPlanRoutes = require("./src/routes/adminUserWorkoutPlan.routes");
 const userPersonalizedMealandWorkoutRoutes = require("./src/routes/userPersonalizedMealandWorkout.routes");
 const cors = require("cors");
 const stripe = require("./src/config/stripe");
 const { webhookHandler } = require("./src/controllers/subscription.controller");
+const { revenuecatWebhookHandler } = require("./src/controllers/revenuecat.controller");
 const { sendEmail } = require("./src/config/email");
 
 const app = express();
@@ -95,6 +97,7 @@ app.use((req, res, next) => {
 });
 
 app.use("/api/subscription/webhook", express.raw({ type: "application/json" }), webhookHandler);
+app.use("/api/revenuecat/webhook", express.raw({ type: "application/json" }), revenuecatWebhookHandler);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -123,6 +126,7 @@ app.use("/api/workout", workoutRoutes);
 app.use("/api/supplement", supplementRoutes);
 app.use("/api/booking", bookingRoutes);
 app.use("/api/subscription", subscriptionRoutes);
+app.use("/api/revenuecat", revenuecatRoutes);
 app.use("/api/user-personalized", userPersonalizedMealandWorkoutRoutes);
 
 app.get("/", (req, res) => {

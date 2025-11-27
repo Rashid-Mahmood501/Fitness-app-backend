@@ -1,0 +1,236 @@
+{
+  "info": {
+    "name": "RevenueCat API Tests",
+    "description": "API testing collection for RevenueCat subscription endpoints",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3005",
+      "type": "string"
+    },
+    {
+      "key": "jwt_token",
+      "value": "your-jwt-token-here",
+      "type": "string"
+    },
+    {
+      "key": "user_id",
+      "value": "mongodb-user-id-here",
+      "type": "string"
+    },
+    {
+      "key": "revenuecat_app_user_id",
+      "value": "test_user_123",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "RevenueCat Webhook",
+      "item": [
+        {
+          "name": "Test Initial Purchase Webhook",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event\": {\n    \"type\": \"INITIAL_PURCHASE\",\n    \"app_user_id\": \"{{revenuecat_app_user_id}}\",\n    \"original_app_user_id\": \"{{revenuecat_app_user_id}}\",\n    \"product_id\": \"yearly_premium\",\n    \"entitlement_ids\": [\"Pro\"],\n    \"period_type\": \"NORMAL\",\n    \"purchased_at_ms\": 1640000000000,\n    \"expiration_at_ms\": 1671536000000,\n    \"store\": \"APP_STORE\",\n    \"environment\": \"SANDBOX\",\n    \"is_trial_period\": false,\n    \"transaction_id\": \"1000000123456789\",\n    \"original_transaction_id\": \"1000000123456789\",\n    \"price_in_purchased_currency\": 150.00,\n    \"currency\": \"USD\"\n  },\n  \"api_version\": \"1.0\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/revenuecat/webhook",
+              "host": ["{{base_url}}"],
+              "path": ["api", "revenuecat", "webhook"]
+            }
+          }
+        },
+        {
+          "name": "Test Renewal Webhook",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event\": {\n    \"type\": \"RENEWAL\",\n    \"app_user_id\": \"{{revenuecat_app_user_id}}\",\n    \"product_id\": \"yearly_premium\",\n    \"entitlement_ids\": [\"Pro\"],\n    \"period_type\": \"NORMAL\",\n    \"purchased_at_ms\": 1671536000000,\n    \"expiration_at_ms\": 1703072000000,\n    \"store\": \"APP_STORE\",\n    \"environment\": \"SANDBOX\",\n    \"is_trial_period\": false,\n    \"transaction_id\": \"1000000123456790\",\n    \"original_transaction_id\": \"1000000123456789\",\n    \"price_in_purchased_currency\": 150.00,\n    \"currency\": \"USD\"\n  },\n  \"api_version\": \"1.0\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/revenuecat/webhook",
+              "host": ["{{base_url}}"],
+              "path": ["api", "revenuecat", "webhook"]
+            }
+          }
+        },
+        {
+          "name": "Test Cancellation Webhook",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event\": {\n    \"type\": \"CANCELLATION\",\n    \"app_user_id\": \"{{revenuecat_app_user_id}}\",\n    \"product_id\": \"yearly_premium\",\n    \"entitlement_ids\": [\"Pro\"],\n    \"period_type\": \"NORMAL\",\n    \"purchased_at_ms\": 1640000000000,\n    \"expiration_at_ms\": 1671536000000,\n    \"store\": \"APP_STORE\",\n    \"environment\": \"SANDBOX\",\n    \"is_trial_period\": false,\n    \"transaction_id\": \"1000000123456789\",\n    \"original_transaction_id\": \"1000000123456789\",\n    \"cancel_reason\": \"UNSUBSCRIBE\"\n  },\n  \"api_version\": \"1.0\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/revenuecat/webhook",
+              "host": ["{{base_url}}"],
+              "path": ["api", "revenuecat", "webhook"]
+            }
+          }
+        },
+        {
+          "name": "Test Billing Issue Webhook",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event\": {\n    \"type\": \"BILLING_ISSUE\",\n    \"app_user_id\": \"{{revenuecat_app_user_id}}\",\n    \"product_id\": \"yearly_premium\",\n    \"entitlement_ids\": [\"Pro\"],\n    \"period_type\": \"NORMAL\",\n    \"purchased_at_ms\": 1640000000000,\n    \"expiration_at_ms\": 1671536000000,\n    \"store\": \"APP_STORE\",\n    \"environment\": \"SANDBOX\",\n    \"is_trial_period\": false,\n    \"transaction_id\": \"1000000123456789\",\n    \"original_transaction_id\": \"1000000123456789\"\n  },\n  \"api_version\": \"1.0\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/revenuecat/webhook",
+              "host": ["{{base_url}}"],
+              "path": ["api", "revenuecat", "webhook"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "User Management",
+      "item": [
+        {
+          "name": "Sync User with RevenueCat",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": \"{{user_id}}\",\n  \"email\": \"test@example.com\",\n  \"revenuecat_app_user_id\": \"{{revenuecat_app_user_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/revenuecat/users/sync",
+              "host": ["{{base_url}}"],
+              "path": ["api", "revenuecat", "users", "sync"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Subscription Verification",
+      "item": [
+        {
+          "name": "Verify Subscription",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/revenuecat/subscriptions/verify/{{user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "revenuecat", "subscriptions", "verify", "{{user_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Get Subscription Status",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/revenuecat/subscriptions/status/{{user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "revenuecat", "subscriptions", "status", "{{user_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Get Subscription History",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/revenuecat/subscriptions/history/{{user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "revenuecat", "subscriptions", "history", "{{user_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin Functions",
+      "item": [
+        {
+          "name": "Grant Access (Promotional)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{user_id}}\",\n  \"productId\": \"yearly_premium\",\n  \"durationDays\": 365\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/revenuecat/subscriptions/grant-access",
+              "host": ["{{base_url}}"],
+              "path": ["api", "revenuecat", "subscriptions", "grant-access"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -46,6 +46,7 @@ const userSchema = new mongoose.Schema({
   profilePicture: { type: String, default: "" },
   profileComplete: { type: Boolean, default: false },
   stripeCustomerId: { type: String, default: null },
+  revenuecatAppUserId: { type: String, unique: true, sparse: true },
   mealGenerated: { type: Boolean, default: false },
   resetPasswordOTP: { type: String },
   resetPasswordExpires: { type: Date },
