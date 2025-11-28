@@ -22,6 +22,11 @@ const signup = async (req, res) => {
     });
 
     await user.save();
+
+    // Set RevenueCat App User ID to match user._id for webhook processing
+    user.revenuecatAppUserId = user._id.toString();
+    await user.save();
+
     const token = jwt.sign(
       { userId: user._id, email: user.email },
       process.env.JWT_SECRET,
@@ -32,6 +37,7 @@ const signup = async (req, res) => {
       success: true,
       message: "User registered successfully",
       data: {
+        _id: user._id,
         fullname: user.fullname,
         email: user.email,
         phoneNumber: user.phoneNumber,
@@ -68,6 +74,12 @@ const signin = async (req, res) => {
       });
     }
 
+    // Ensure revenuecatAppUserId is set (for existing users who signed up before this fix)
+    if (!user.revenuecatAppUserId) {
+      user.revenuecatAppUserId = user._id.toString();
+      await user.save();
+    }
+
     const token = jwt.sign(
       { userId: user._id, email: user.email },
       process.env.JWT_SECRET,
@@ -78,6 +90,7 @@ const signin = async (req, res) => {
       success: true,
       message: "Signin successful",
       data: {
+        _id: user._id,
         fullname: user.fullname,
         email: user.email,
         phoneNumber: user.phoneNumber,
