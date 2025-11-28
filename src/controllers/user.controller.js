@@ -199,10 +199,37 @@ const uploadProfileImage = async (req, res) => {
   }
 };
 
+const deleteAccount = async (req, res) => {
+  try {
+    const userId = req.userId;
+
+    const deletedUser = await User.findByIdAndUpdate(
+      userId,
+      { isDeleted: true, deletedAt: new Date() },
+      { new: true }
+    );
+
+    if (!deletedUser) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    }
+
+    res.json({
+      success: true,
+      message: "Account deleted successfully",
+    });
+  } catch (error) {
+    console.error("Error deleting account:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
 module.exports = {
   getProfile,
   updateProfile,
   updateCurrentWeight,
   updateFullName,
   uploadProfileImage,
+  deleteAccount,
 };

@@ -6,12 +6,13 @@ const {
   updateCurrentWeight,
   updateFullName,
   uploadProfileImage,
+  deleteAccount,
 } = require("../controllers/user.controller");
 const authMiddleware = require("../middlewares/auth.middleware");
 const { imageUpload } = require("../middlewares/upload");
 const subscriptionMiddleware = require("../middlewares/subscription.middleware");
 
-router.get("/profile", authMiddleware,  getProfile);
+router.get("/profile", authMiddleware, getProfile);
 router.put("/profile", authMiddleware, updateProfile);
 router.post(
   "/update-weight",
@@ -27,5 +28,7 @@ router.post(
   imageUpload.single("profileImage"),
   uploadProfileImage
 );
+
+router.delete("/delete-account", authMiddleware, deleteAccount);
 
 module.exports = router;

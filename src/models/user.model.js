@@ -45,11 +45,15 @@ const userSchema = new mongoose.Schema({
   workoutDays: { type: String },
   profilePicture: { type: String, default: "" },
   profileComplete: { type: Boolean, default: false },
+
+  // DEPRECATED: Stripe fields (kept for reference)
   stripeCustomerId: { type: String, default: null },
   revenuecatAppUserId: { type: String, unique: true, sparse: true },
   mealGenerated: { type: Boolean, default: false },
   resetPasswordOTP: { type: String },
   resetPasswordExpires: { type: Date },
+  isDeleted: { type: Boolean, default: false },
+  deletedAt: { type: Date, default: null },
 });
 
 userSchema.pre("save", async function (next) {
@@ -63,6 +67,23 @@ userSchema.pre("save", async function (next) {
     next(error);
   }
 });
+
+userSchema.pre(/^find/, function (next) {
+  this.where({ isDeleted: false });
+  next();
+});
+
+userSchema.methods.softDelete = async function () {
+  this.isDeleted = true;
+  this.deletedAt = new Date();
+  await this.save();
+};
+
+userSchema.methods.restore = async function () {
+  this.isDeleted = false;
+  this.deletedAt = null;
+  await this.save();
+};
 
 userSchema.methods.comparePassword = async function (candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
