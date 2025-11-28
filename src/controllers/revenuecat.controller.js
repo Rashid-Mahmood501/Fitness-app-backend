@@ -539,10 +539,15 @@ const verifySubscription = async (req, res) => {
   }
 };
 
-// Get Subscription Status (detailed)
+// Get Subscription Status (detailed) - for authenticated user
 const getSubscriptionStatus = async (req, res) => {
   try {
-    const { userId } = req.params;
+    // Get userId from auth middleware OR from params (for admin endpoints)
+    const userId = req.userId || req.params.userId;
+
+    if (!userId) {
+      return res.status(400).json({ error: "User ID is required" });
+    }
 
     const subscriptions = await RevenuecatSubscription.find({
       user: userId

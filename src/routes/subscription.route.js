@@ -19,19 +19,15 @@ const authMiddleware = require("../middlewares/auth.middleware");
 
 // RevenueCat subscription routes
 const {
-  getRevenueCatStatus,
-  syncRevenueCatSubscription,
-  revenueCatWebhook,
+  getSubscriptionStatus,
+  syncUser,
 } = require("../controllers/revenuecat.controller");
 
 // Get subscription status from RevenueCat
-router.get("/revenuecat-status", authMiddleware, getRevenueCatStatus);
+router.get("/revenuecat-status", authMiddleware, getSubscriptionStatus);
 
-// Sync RevenueCat subscription with backend
-router.post("/sync-revenuecat", authMiddleware, syncRevenueCatSubscription);
-
-// RevenueCat webhook endpoint (no auth middleware - RevenueCat will send events)
-// You should verify the webhook signature in production
-router.post("/revenuecat-webhook", revenueCatWebhook);
+// DEPRECATED: Manual sync endpoint (no longer needed - webhook handles this automatically)
+// Kept for backwards compatibility but not recommended to use
+router.post("/sync-revenuecat", authMiddleware, syncUser);
 
 module.exports = router;

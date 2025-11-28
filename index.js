@@ -96,12 +96,9 @@ app.use((req, res, next) => {
   }
 });
 
-// Stripe webhook endpoint (requires raw body)
+// Webhook endpoints (require raw body for signature verification)
 app.use("/api/subscription/webhook", express.raw({ type: "application/json" }), webhookHandler);
 app.use("/api/revenuecat/webhook", express.raw({ type: "application/json" }), revenuecatWebhookHandler);
-
-// RevenueCat webhook endpoint (requires JSON body)
-app.use("/api/subscription/revenuecat-webhook", express.json(), revenueCatWebhook);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
