@@ -553,16 +553,7 @@ const getSubscriptionStatus = async (req, res) => {
       user: userId
     }).sort({ createdAt: -1 });
 
-    const activeSubscription = subscriptions.find(sub =>
-      sub.status === "active" && sub.expiresAt > new Date()
-    );
-
-    res.json({
-      user_id: userId,
-      has_active_subscription: !!activeSubscription,
-      active_subscription: activeSubscription || null,
-      subscription_history: subscriptions.slice(0, 10) // Last 10
-    });
+    res.json(subscriptions);
   } catch (error) {
     console.error("Get subscription status error:", error);
     res.status(500).json({ error: error.message });
