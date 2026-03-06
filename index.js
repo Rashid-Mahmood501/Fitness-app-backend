@@ -107,7 +107,6 @@ app.use(express.urlencoded({ extended: true }));
 const testStripeConnection = async () => {
   try {
     const account = await stripe.accounts.retrieve();
-    console.log("✅ Stripe connected successfully:", account.id);
   } catch (error) {
     console.error("❌ Stripe connection failed:", error.message);
   }
