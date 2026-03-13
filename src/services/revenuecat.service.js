@@ -216,8 +216,136 @@ async function syncSubscriptionToDatabase(user, appUserId, subscriber, activeEnt
   return subscription;
 }
 
+/**
+ * Find user by RevenueCat app_user_id, checking aliases if needed
+ * This handles the case where webhook sends anonymous ID but user has MongoDB _id as alias
+ *
+ * @param {string} appUserId - The app_user_id from RevenueCat webhook
+ * @returns {Promise<{user: Object|null, resolvedAppUserId: string|null}>}
+ */
+async function findUserByRevenueCatId(appUserId) {
+  console.log(`🔍 [RevenueCat] Finding user for app_user_id: ${appUserId}`);
+
+  // First, try direct lookup
+  let user = await User.findOne({ revenuecatAppUserId: appUserId });
+  if (user) {
+    console.log(`✅ [RevenueCat] Found user by revenuecatAppUserId: ${user._id}`);
+    return { user, resolvedAppUserId: appUserId };
+  }
+
+  // Try matching by MongoDB _id (in case app_user_id IS the MongoDB _id)
+  if (appUserId.match(/^[0-9a-fA-F]{24}$/)) {
+    user = await User.findById(appUserId);
+    if (user) {
+      console.log(`✅ [RevenueCat] Found user by MongoDB _id: ${user._id}`);
+      return { user, resolvedAppUserId: appUserId };
+    }
+  }
+
+  // If not found and it's an anonymous ID, query RevenueCat API for aliases
+  if (appUserId.startsWith('$RCAnonymousID:')) {
+    console.log(`🔍 [RevenueCat] Anonymous ID detected, fetching aliases from API...`);
+
+    const subscriber = await fetchSubscriberFromRevenueCat(appUserId);
+    if (subscriber && subscriber.subscriber_attributes) {
+      // RevenueCat doesn't return aliases directly in subscriber response
+      // But we can check if there's a non-anonymous ID that matches a user
+    }
+
+    // Try to find the subscriber data and check for known aliases
+    if (subscriber) {
+      // The subscriber object contains original_app_user_id and other IDs
+      // Try to find user by checking all possible IDs
+      const possibleIds = new Set();
+
+      // Check if there's a $userId attribute
+      if (subscriber.subscriber_attributes?.$userId?.value) {
+        possibleIds.add(subscriber.subscriber_attributes.$userId.value);
+      }
+
+      // Check if there's an $email attribute we can match
+      if (subscriber.subscriber_attributes?.$email?.value) {
+        const userByEmail = await User.findOne({
+          email: subscriber.subscriber_attributes.$email.value.toLowerCase()
+        });
+        if (userByEmail) {
+          console.log(`✅ [RevenueCat] Found user by email attribute: ${userByEmail._id}`);
+          // Update the user's revenuecatAppUserId to include this anonymous ID for future lookups
+          if (!userByEmail.revenuecatAppUserId) {
+            userByEmail.revenuecatAppUserId = userByEmail._id.toString();
+            await userByEmail.save();
+          }
+          return { user: userByEmail, resolvedAppUserId: appUserId };
+        }
+      }
+
+      // Try MongoDB _id pattern extraction from non-anonymous aliases
+      // RevenueCat API v1 doesn't expose aliases, so we need to query with potential IDs
+      // The app uses MongoDB _id as the logged-in user ID
+      // Let's try to find users who have revenuecatAppUserId set and check if they match
+      const allUsersWithRevenueCat = await User.find({
+        revenuecatAppUserId: { $exists: true, $ne: null }
+      }).select('_id revenuecatAppUserId email');
+
+      for (const potentialUser of allUsersWithRevenueCat) {
+        // Check if this user's revenuecatAppUserId (MongoDB _id) is an alias of the anonymous ID
+        const potentialSubscriber = await fetchSubscriberFromRevenueCat(potentialUser.revenuecatAppUserId);
+        if (potentialSubscriber) {
+          // If we can fetch subscriber data with this ID, check if it's the same subscription
+          const activeEnt = getActiveEntitlement(potentialSubscriber);
+          if (activeEnt) {
+            // Compare with the original anonymous subscriber's data
+            const anonActiveEnt = getActiveEntitlement(subscriber);
+            if (anonActiveEnt &&
+                activeEnt.product_identifier === anonActiveEnt.product_identifier &&
+                activeEnt.original_purchase_date === anonActiveEnt.original_purchase_date) {
+              console.log(`✅ [RevenueCat] Found matching user via subscription comparison: ${potentialUser._id}`);
+              return { user: potentialUser, resolvedAppUserId: potentialUser.revenuecatAppUserId };
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Last resort: check if any user has this exact ID stored
+  // (handles edge cases)
+  const usersByExactMatch = await User.find({
+    $or: [
+      { revenuecatAppUserId: appUserId },
+      { _id: appUserId.match(/^[0-9a-fA-F]{24}$/) ? appUserId : null }
+    ].filter(q => q._id !== null || q.revenuecatAppUserId)
+  });
+
+  if (usersByExactMatch.length > 0) {
+    console.log(`✅ [RevenueCat] Found user in last resort search: ${usersByExactMatch[0]._id}`);
+    return { user: usersByExactMatch[0], resolvedAppUserId: appUserId };
+  }
+
+  console.log(`⚠️ [RevenueCat] Could not find user for app_user_id: ${appUserId}`);
+  return { user: null, resolvedAppUserId: null };
+}
+
+/**
+ * Create subscription record from RevenueCat subscriber data
+ * Used when we need to manually sync a subscription
+ */
+async function createSubscriptionFromSubscriber(user, appUserId, subscriber) {
+  const entitlementId = process.env.REVENUECAT_ENTITLEMENT_ID || "Pro";
+  const activeEntitlement = getActiveEntitlement(subscriber, entitlementId);
+
+  if (!activeEntitlement) {
+    console.log(`⚠️ [RevenueCat] No active entitlement found for user: ${user._id}`);
+    return null;
+  }
+
+  return await syncSubscriptionToDatabase(user, appUserId, subscriber, activeEntitlement);
+}
+
 module.exports = {
   fetchSubscriberFromRevenueCat,
   getActiveEntitlement,
-  verifyAndSyncSubscription
+  verifyAndSyncSubscription,
+  findUserByRevenueCatId,
+  createSubscriptionFromSubscriber
 };

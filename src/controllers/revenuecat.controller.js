@@ -3,6 +3,7 @@ const User = require("../models/user.model");
 const RevenuecatSubscription = require("../models/revenuecatSubscription.model");
 const WebhookEvent = require("../models/webhookEvent.model");
 const { sendEmail } = require("../config/email");
+const { findUserByRevenueCatId, fetchSubscriberFromRevenueCat } = require("../services/revenuecat.service");
 
 // RevenueCat Webhook Handler
 const revenuecatWebhookHandler = async (req, res) => {
@@ -110,22 +111,89 @@ async function processWebhookEvent(eventData) {
     takehome_percentage
   } = eventData;
 
-  // Find user by RevenueCat app_user_id
-  const user = await User.findOne({ revenuecatAppUserId: app_user_id });
+  // Find user by RevenueCat app_user_id (with alias resolution)
+  let user = await User.findOne({ revenuecatAppUserId: app_user_id });
+
+  // If not found by revenuecatAppUserId, try additional lookup methods
+  if (!user) {
+    console.log(`🔍 [Webhook] User not found by revenuecatAppUserId, trying additional lookups...`);
+
+    // Try by MongoDB _id (if app_user_id is a valid ObjectId)
+    if (app_user_id.match(/^[0-9a-fA-F]{24}$/)) {
+      user = await User.findById(app_user_id);
+      if (user) {
+        console.log(`✅ [Webhook] Found user by MongoDB _id: ${user._id}`);
+      }
+    }
+
+    // If still not found and it's an anonymous ID, try to resolve via RevenueCat API
+    if (!user && app_user_id.startsWith('$RCAnonymousID:')) {
+      console.log(`🔍 [Webhook] Anonymous ID detected, querying RevenueCat API for alias resolution...`);
+
+      // Query RevenueCat API to get subscriber data
+      const subscriber = await fetchSubscriberFromRevenueCat(app_user_id);
+
+      if (subscriber) {
+        // Try to find user by aliases - RevenueCat stores app User IDs
+        // The mobile app calls Purchases.logIn(userId) with MongoDB _id
+        // So there should be an alias matching the MongoDB _id
+
+        // Check all users with revenuecatAppUserId set
+        const usersWithRC = await User.find({
+          revenuecatAppUserId: { $exists: true, $ne: null, $ne: '' }
+        }).select('_id revenuecatAppUserId email');
+
+        for (const potentialUser of usersWithRC) {
+          // Check if this user's ID is an alias for the anonymous subscriber
+          // by querying RevenueCat with their ID and comparing subscription data
+          const userSubscriber = await fetchSubscriberFromRevenueCat(potentialUser.revenuecatAppUserId);
+
+          if (userSubscriber && userSubscriber.entitlements) {
+            // Compare entitlements to see if it's the same subscriber
+            const subscriberEntKeys = Object.keys(subscriber.entitlements || {});
+            const userEntKeys = Object.keys(userSubscriber.entitlements || {});
+
+            if (subscriberEntKeys.length > 0 && userEntKeys.length > 0) {
+              const subEnt = subscriber.entitlements[subscriberEntKeys[0]];
+              const userEnt = userSubscriber.entitlements[userEntKeys[0]];
+
+              // If same original purchase date and product, it's the same subscription
+              if (subEnt && userEnt &&
+                  subEnt.original_purchase_date === userEnt.original_purchase_date &&
+                  subEnt.product_identifier === userEnt.product_identifier) {
+                user = potentialUser;
+                console.log(`✅ [Webhook] Found user via subscription matching: ${user._id} (${user.email})`);
+                break;
+              }
+            }
+          }
+        }
+
+        // Also try to find by email if RevenueCat has it
+        if (!user && subscriber.subscriber_attributes?.$email?.value) {
+          const email = subscriber.subscriber_attributes.$email.value.toLowerCase();
+          user = await User.findOne({ email });
+          if (user) {
+            console.log(`✅ [Webhook] Found user by email attribute: ${user._id} (${user.email})`);
+          }
+        }
+      }
+    }
+  }
 
   if (!user) {
-    console.warn(`⚠️ User not found for RevenueCat app_user_id: ${app_user_id}`);
+    console.warn(`⚠️ [Webhook] User not found for RevenueCat app_user_id: ${app_user_id}`);
     console.log(`   Event type: ${type}`);
     console.log(`   Event logged to database but NOT processed`);
-    console.log(`   💡 Solution: User must sync via POST /api/revenuecat/users/sync`);
-    console.log(`   Once synced, failed events can be reprocessed via POST /api/revenuecat/webhooks/reprocess`);
+    console.log(`   💡 Tip: The subscription may be linked to an anonymous ID.`);
+    console.log(`   💡 The user will still be verified via real-time API check when they access protected endpoints.`);
 
     // Don't process the event, but don't throw error either
     // The webhook event is already saved to database for later reprocessing
     return;
   }
 
-  console.log(`✅ Found user: ${user._id} (${user.email})`);
+  console.log(`✅ [Webhook] Found user: ${user._id} (${user.email})`);
   console.log(`   Processing ${type} event...`);
 
   const subscriptionData = {
@@ -790,6 +858,61 @@ const getWebhookStats = async (req, res) => {
   }
 };
 
+// Debug endpoint: Verify subscription via RevenueCat API and sync to database
+const debugVerifyAndSync = async (req, res) => {
+  try {
+    const userId = req.userId || req.params.userId;
+
+    if (!userId) {
+      return res.status(400).json({ error: "User ID is required" });
+    }
+
+    console.log(`🔍 [Debug] Starting subscription verification for user: ${userId}`);
+
+    const { verifyAndSyncSubscription } = require("../services/revenuecat.service");
+    const result = await verifyAndSyncSubscription(userId);
+
+    // Also check what's in the database now
+    const dbSubscriptions = await RevenuecatSubscription.find({ user: userId })
+      .sort({ createdAt: -1 });
+
+    const user = await User.findById(userId).select('_id email revenuecatAppUserId');
+
+    res.json({
+      success: true,
+      user: {
+        id: user?._id,
+        email: user?.email,
+        revenuecatAppUserId: user?.revenuecatAppUserId
+      },
+      apiCheckResult: {
+        hasActiveSubscription: result.hasActiveSubscription,
+        source: result.source,
+        subscription: result.subscription ? {
+          id: result.subscription._id,
+          productId: result.subscription.productId,
+          status: result.subscription.status,
+          expiresAt: result.subscription.expiresAt
+        } : null
+      },
+      databaseSubscriptions: dbSubscriptions.map(s => ({
+        id: s._id,
+        productId: s.productId,
+        status: s.status,
+        expiresAt: s.expiresAt,
+        revenuecatSubscriberId: s.revenuecatSubscriberId
+      }))
+    });
+  } catch (error) {
+    console.error("❌ [Debug] Verification error:", error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
+};
+
 module.exports = {
   revenuecatWebhookHandler,
   syncUser,
@@ -799,5 +922,6 @@ module.exports = {
   grantAccess,
   getFailedWebhooks,
   reprocessFailedWebhooks,
-  getWebhookStats
+  getWebhookStats,
+  debugVerifyAndSync
 };

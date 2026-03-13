@@ -9,7 +9,8 @@ const {
   grantAccess,
   getFailedWebhooks,
   reprocessFailedWebhooks,
-  getWebhookStats
+  getWebhookStats,
+  debugVerifyAndSync
 } = require("../controllers/revenuecat.controller");
 
 // User sync endpoint - links backend user to RevenueCat subscriber
@@ -35,5 +36,9 @@ router.get("/webhooks/failed", authMiddleware, getFailedWebhooks);
 
 // Admin: Reprocess failed webhook events
 router.post("/webhooks/reprocess", authMiddleware, reprocessFailedWebhooks);
+
+// Debug: Verify subscription via RevenueCat API and sync to database
+// Use this to test the race condition fix
+router.get("/debug/verify-sync/:userId", authMiddleware, debugVerifyAndSync);
 
 module.exports = router;
